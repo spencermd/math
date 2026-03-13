@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Arcanum Mathematica",
+    "slug": "mathtree-ipad",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "platforms": ["ios"],
+    "scheme": "arcanum",
+    "ios": {
+      "bundleIdentifier": "com.mathtree.arcanum",
+      "requiresFullScreen": true,
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIRequiresFullScreen": true,
+        "UIInterfaceOrientationPortrait": false,
+        "UIInterfaceOrientationLandscapeLeft": true,
+        "UIInterfaceOrientationLandscapeRight": true
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0a0a14",
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
