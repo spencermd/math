@@ -1,6 +1,6 @@
 // Sanity checks for the curriculum graph. Run: npm run validate
 import {
-  NODES, EDGES, REALMS, CHILDREN,
+  NODES, EDGES, REALMS, REALM_ORDER, CHILDREN, gradeLabel,
   cascadeUnlocks, newlyEnteredRealms, updateStreak, visibleStreak, type ProgressMap,
 } from '../src/index.ts';
 
@@ -19,6 +19,15 @@ for (const e of EDGES) {
   const key = `${e.source}->${e.target}`;
   if (seen.has(key)) errors.push(`duplicate edge ${key}`);
   seen.add(key);
+}
+
+// Grade bands must be well-formed and never go backwards through the realms
+let prevFrom = -1;
+for (const id of REALM_ORDER) {
+  const { from, to } = REALMS[id].grades;
+  if (from > to) errors.push(`realm ${id}: grades from ${from} > to ${to}`);
+  if (from < prevFrom) errors.push(`realm ${id}: starts at grade ${from}, before the previous realm`);
+  prevFrom = from;
 }
 
 // Cycle check (DFS over all edges)
@@ -61,6 +70,7 @@ check('visible yesterday', visibleStreak(5, '2026-10-20', '2026-10-21'), 5);
 check('visible lapsed', visibleStreak(5, '2026-10-19', '2026-10-21'), 0);
 
 console.log(`${NODES.length} topics, ${EDGES.length} edges (${EDGES.filter(e => e.cross).length} cross), ${Object.keys(REALMS).length} realms`);
+console.log(`grades: ${REALM_ORDER.map(id => `${REALMS[id].label} ${gradeLabel(REALMS[id])}`).join(' · ')}`);
 console.log(`realm unlock order: ${enteredOrder.join(' → ')}`);
 if (errors.length) {
   console.error('FAIL\n- ' + errors.join('\n- '));

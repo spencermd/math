@@ -1,4 +1,4 @@
-import { REALMS, REALM_ORDER, getNodesForRealm, getRealmProgress, getStatus } from '@mathtree/curriculum';
+import { REALMS, REALM_ORDER, getNodesForRealm, getRealmProgress, getStatus, gradeLabel } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 
 export function RealmBar({ onJump }: { onJump: (realmId: string | number) => void }) {
@@ -20,8 +20,8 @@ export function RealmBar({ onJump }: { onJump: (realmId: string | number) => voi
               ['--pct' as string]: `${pct}%`,
             }}
             onClick={() => onJump(id)}
-            title={`${realm.name} — ${pct}% complete${open ? '' : ' (locked)'}`}
-            aria-label={`Realm ${realm.label}: ${realm.name}, ${pct}% complete`}
+            title={`${realm.name} (${gradeLabel(realm)}) — ${pct}% complete${open ? '' : ' (locked)'}`}
+            aria-label={`Realm ${realm.label}: ${realm.name}, ${gradeLabel(realm)}, ${pct}% complete`}
           >
             {realm.label}
           </button>

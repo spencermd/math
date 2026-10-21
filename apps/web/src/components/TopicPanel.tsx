@@ -5,6 +5,7 @@ import {
   EDGES,
   getRealmForNode,
   getStatus,
+  gradeLabel,
   type Status,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
@@ -45,7 +46,10 @@ export function TopicPanel({ topicId, onClose, onSelect }: Props) {
         Realm {realm.label} · {realm.name}
       </p>
       <h2 className="panel-title">{topic.label}</h2>
-      <p className="panel-status" data-status={status}>{STATUS_TEXT[status]}</p>
+      <div className="panel-badges">
+        <span className="panel-status" data-status={status}>{STATUS_TEXT[status]}</span>
+        <span className="panel-grade">{gradeLabel(realm)}</span>
+      </div>
       <p className="panel-desc">{topic.d}</p>
 
       <div className="panel-actions">

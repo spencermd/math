@@ -233,6 +233,7 @@ button {
   color: var(--ink);
 }
 .panel-realm {
+  padding-right: 36px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -245,9 +246,14 @@ button {
   font-weight: 700;
   line-height: 1.15;
 }
-.panel-status {
-  display: inline-block;
+.panel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 10px;
+}
+.panel-status,
+.panel-grade {
   padding: 3px 10px;
   border-radius: 999px;
   border: 1px solid var(--line);
@@ -390,8 +396,18 @@ button {
   font-weight: 700;
 }
 .ceremony-sub {
-  margin: 8px 0 28px;
+  margin-top: 8px;
   color: var(--ink-muted);
+}
+.ceremony-grades {
+  display: inline-block;
+  margin: 14px 0 28px;
+  padding: 3px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
 }
 
 /* ── Small screens ────────────────────────────────── */

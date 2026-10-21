@@ -7,8 +7,13 @@ export type RealmId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | '8a' | '8b';
 export type CapstoneId = 'cap_a' | 'cap_b';
 export type NodeRealmId = RealmId | CapstoneId;
 
+/** School grade: 0 = kindergarten, 1–12 = grades 1–12, 13 = college. */
+export type Grade = number;
+
 export interface RealmDef {
   id: RealmId;
+  /** Typical US grade band for this realm's topics. */
+  grades: { from: Grade; to: Grade };
   label: string;   // Roman numeral for sidebar
   name: string;
   sub: string;
@@ -33,15 +38,15 @@ export interface TopicEdge {
 
 // ── Realms ────────────────────────────────────────────────────────────────────
 export const REALMS: Record<string | number, RealmDef> = {
-  1:   { id:1,  label:'I',   name:'The Primordial Garden',    sub:'Where numbers are born',                            color:'#D4A017', border:'#F5D060', glow:'#D4A01740', locked:'#3A3520' },
-  2:   { id:2,  label:'II',  name:'The Stone Columns',        sub:'Structure rises from arithmetic',                   color:'#5A6A8A', border:'#8899BB', glow:'#5A6A8A40', locked:'#2A2E38' },
-  3:   { id:3,  label:'III', name:'The Crossroads',           sub:'Paths diverge through number and form',             color:'#1A8A7A', border:'#40D4B8', glow:'#1A8A7A40', locked:'#1A2E2A' },
-  4:   { id:4,  label:'IV',  name:'The Awakening',            sub:'Letters replace numbers — abstraction ignites',     color:'#7B4FBF', border:'#B89AE8', glow:'#7B4FBF40', locked:'#2A2038' },
-  5:   { id:5,  label:'V',   name:'The Ascent',               sub:'The mountain of algebra and proof',                 color:'#B5334A', border:'#E86B7F', glow:'#B5334A40', locked:'#381A22' },
-  6:   { id:6,  label:'VI',  name:'The Deepening',            sub:'Crystalline caverns of advanced algebra',           color:'#2255AA', border:'#5599EE', glow:'#2255AA40', locked:'#1A2238' },
-  7:   { id:7,  label:'VII', name:'The Convergence',          sub:'All paths meet in the temple of angles',            color:'#E6A817', border:'#FFD65C', glow:'#E6A81740', locked:'#3A3520' },
-  '8a':{ id:'8a' as RealmId, label:'∞', name:'The Infinite Staircase', sub:'Calculus and differential equations', color:'#1B998B', border:'#3DCBB8', glow:'#1B998B40', locked:'#1A2E28' },
-  '8b':{ id:'8b' as RealmId, label:'◇', name:'The Crystal Lattice',   sub:'Linear algebra — pure structure',      color:'#6C5CE7', border:'#A29BFE', glow:'#6C5CE740', locked:'#221E38' },
+  1:   { id:1,  label:'I',   grades:{ from: 0, to: 2 }, name:'The Primordial Garden',    sub:'Where numbers are born',                            color:'#D4A017', border:'#F5D060', glow:'#D4A01740', locked:'#3A3520' },
+  2:   { id:2,  label:'II',  grades:{ from: 3, to: 4 }, name:'The Stone Columns',        sub:'Structure rises from arithmetic',                   color:'#5A6A8A', border:'#8899BB', glow:'#5A6A8A40', locked:'#2A2E38' },
+  3:   { id:3,  label:'III', grades:{ from: 5, to: 6 }, name:'The Crossroads',           sub:'Paths diverge through number and form',             color:'#1A8A7A', border:'#40D4B8', glow:'#1A8A7A40', locked:'#1A2E2A' },
+  4:   { id:4,  label:'IV',  grades:{ from: 7, to: 8 }, name:'The Awakening',            sub:'Letters replace numbers — abstraction ignites',     color:'#7B4FBF', border:'#B89AE8', glow:'#7B4FBF40', locked:'#2A2038' },
+  5:   { id:5,  label:'V',   grades:{ from: 9, to:10 }, name:'The Ascent',               sub:'The mountain of algebra and proof',                 color:'#B5334A', border:'#E86B7F', glow:'#B5334A40', locked:'#381A22' },
+  6:   { id:6,  label:'VI',  grades:{ from:10, to:11 }, name:'The Deepening',            sub:'Crystalline caverns of advanced algebra',           color:'#2255AA', border:'#5599EE', glow:'#2255AA40', locked:'#1A2238' },
+  7:   { id:7,  label:'VII', grades:{ from:11, to:12 }, name:'The Convergence',          sub:'All paths meet in the temple of angles',            color:'#E6A817', border:'#FFD65C', glow:'#E6A81740', locked:'#3A3520' },
+  '8a':{ id:'8a' as RealmId, label:'∞',   grades:{ from:13, to:13 }, name:'The Infinite Staircase', sub:'Calculus and differential equations', color:'#1B998B', border:'#3DCBB8', glow:'#1B998B40', locked:'#1A2E28' },
+  '8b':{ id:'8b' as RealmId, label:'◇',   grades:{ from:13, to:13 }, name:'The Crystal Lattice',   sub:'Linear algebra — pure structure',      color:'#6C5CE7', border:'#A29BFE', glow:'#6C5CE740', locked:'#221E38' },
 };
 
 export const REALM_ORDER: (string | number)[] = [1, 2, 3, 4, 5, 6, 7, '8a', '8b'];
@@ -287,6 +292,15 @@ EDGES.forEach(e => {
 });
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+export const COLLEGE: Grade = 13;
+
+/** "Grades K–2", "Grades 9–10", "College" */
+export function gradeLabel({ grades: { from, to } }: RealmDef): string {
+  if (from >= COLLEGE) return 'College';
+  const name = (g: Grade) => (g <= 0 ? 'K' : String(g));
+  return from === to ? `Grade ${name(from)}` : `Grades ${name(from)}–${name(to)}`;
+}
+
 export function getRealmForNode(node: TopicNode): RealmDef {
   if (node.realm === 'cap_a') return REALMS['8a'];
   if (node.realm === 'cap_b') return REALMS['8b'];
