@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcanum Mathematica — The Skill Tree of Mathematics</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a14;color:#fffffe;font-family:'Inter',system-ui,sans-serif;overflow:hidden;height:100vh;user-select:none}
+#particle-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#cy{width:100%;height:100vh;z-index:1;position:relative}
+
+/* ── Title Bar ── */
+#title-bar{position:fixed;top:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:center;z-index:20;
+  background:linear-gradient(180deg,rgba(10,10,20,0.95) 0%,rgba(10,10,20,0.7) 70%,transparent 100%);pointer-events:none}
+#title-bar h1{font-family:'Cinzel Decorative',serif;font-size:20px;font-weight:400;letter-spacing:3px;
+  background:linear-gradient(135deg,#f5d060,#e6a817,#d4a017,#f5d060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#title-bar span{display:block;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;
+  -webkit-text-fill-color:#a7a9be;text-align:center;margin-top:2px}
+
+/* ── Search ── */
+#search-wrap{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:20;pointer-events:all}
+#search{background:rgba(15,14,23,0.85);border:1px solid #2d2b42;border-radius:20px;padding:8px 18px;color:#fffffe;
+  font-size:13px;width:240px;outline:none;font-family:'Inter',sans-serif;backdrop-filter:blur(12px);transition:width 0.3s,border-color 0.3s}
+#search:focus{width:320px;border-color:#e6a81780}
+#search::placeholder{color:#5a5a7a}
+
+/* ── Controls ── */
+#controls{position:fixed;top:20px;right:20px;z-index:20;display:flex;gap:6px}
+#controls button{background:rgba(15,14,23,0.85);border:1px solid #2d2b42;color:#fffffe;border-radius:8px;padding:7px 13px;
+  cursor:pointer;font-size:12px;backdrop-filter:blur(10px);transition:background 0.2s,border-color 0.2s;font-family:'Inter',sans-serif}
+#controls button:hover{background:rgba(45,43,66,0.85);border-color:#4a4a6a}
+
+/* ── Realm Sidebar ── */
+#realm-sidebar{position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:6px}
+.realm-pip{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:11px;font-weight:700;cursor:pointer;border:2px solid transparent;
+  transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s;opacity:0.7}
+.realm-pip:hover{transform:scale(1.2);opacity:1}
+.realm-pip.active{opacity:1;transform:scale(1.15);box-shadow:0 0 12px var(--rc)}
+
+/* ── Stats Bar ── */
+#stats-bar{position:fixed;bottom:0;left:0;right:0;height:42px;display:flex;align-items:center;justify-content:center;gap:28px;
+  z-index:20;background:linear-gradient(0deg,rgba(10,10,20,0.95) 0%,rgba(10,10,20,0.7) 70%,transparent 100%);
+  font-size:12px;color:#a7a9be;letter-spacing:0.5px;padding-top:8px}
+#stats-bar .stat{display:flex;align-items:center;gap:6px}
+#stats-bar .stat-val{color:#fffffe;font-weight:600}
+.progress-ring{width:20px;height:20px}
+
+/* ── Tooltip ── */
+#tooltip{position:fixed;display:none;background:rgba(10,10,20,0.95);border:1px solid #2d2b42;border-radius:10px;
+  padding:14px 18px;max-width:300px;font-size:13px;line-height:1.55;z-index:100;pointer-events:none;
+  backdrop-filter:blur(14px);box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+#tooltip h4{font-family:'Cinzel',serif;font-size:14px;margin-bottom:2px;font-weight:600}
+#tooltip .realm-badge{font-size:9px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;display:block}
+#tooltip p{color:#c0c0d0;font-size:12px}
+
+/* ── Detail Panel ── */
+#detail-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;z-index:30;
+  background:rgba(10,10,20,0.97);border-left:1px solid #2d2b42;backdrop-filter:blur(20px);
+  transition:right 0.4s cubic-bezier(0.16,1,0.3,1);overflow-y:auto;padding:0}
+#detail-panel.open{right:0}
+#detail-panel .dp-header{padding:28px 24px 20px;border-bottom:1px solid #1a1a2e;position:relative}
+#detail-panel .dp-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#5a5a7a;
+  font-size:20px;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color 0.2s}
+#detail-panel .dp-close:hover{color:#fffffe}
+#detail-panel .dp-realm{font-size:9px;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px;display:block}
+#detail-panel .dp-title{font-family:'Cinzel',serif;font-size:22px;font-weight:700;margin-bottom:10px;line-height:1.3}
+#detail-panel .dp-desc{color:#c0c0d0;font-size:13px;line-height:1.7;font-style:italic}
+#detail-panel .dp-section{padding:16px 24px;border-bottom:1px solid #1a1a2e}
+#detail-panel .dp-section h5{font-family:'Cinzel',serif;font-size:12px;text-transform:uppercase;letter-spacing:2px;
+  color:#a7a9be;margin-bottom:12px;font-weight:600}
+.prereq-item{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px;color:#c0c0d0}
+.prereq-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.unlock-item{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px;color:#7a7a9a}
+.dp-actions{padding:20px 24px;display:flex;flex-direction:column;gap:10px}
+.dp-btn{padding:12px 20px;border-radius:8px;border:none;font-family:'Cinzel',serif;font-size:13px;font-weight:600;
+  cursor:pointer;letter-spacing:1px;transition:all 0.25s}
+.dp-btn-primary{background:linear-gradient(135deg,#e6a817,#d4a017);color:#0a0a14}
+.dp-btn-primary:hover{box-shadow:0 0 20px #e6a81740;transform:translateY(-1px)}
+.dp-btn-secondary{background:rgba(45,43,66,0.5);color:#fffffe;border:1px solid #2d2b42}
+.dp-btn-secondary:hover{background:rgba(45,43,66,0.8)}
+.dp-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.dp-notes{width:100%;min-height:80px;background:rgba(15,14,23,0.6);border:1px solid #2d2b42;border-radius:8px;
+  padding:10px 14px;color:#c0c0d0;font-size:12px;font-family:'Inter',sans-serif;resize:vertical;outline:none}
+.dp-notes:focus{border-color:#e6a81740}
+.dp-progress-wrap{display:flex;align-items:center;gap:12px}
+.dp-progress-bar{flex:1;height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden}
+.dp-progress-fill{height:100%;border-radius:3px;transition:width 0.3s}
+.dp-progress-pct{font-size:12px;color:#a7a9be;min-width:36px;text-align:right}
+
+/* ── Ceremony Overlay ── */
+#ceremony{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0);pointer-events:none;flex-direction:column;gap:8px}
+#ceremony.active{display:flex;animation:ceremonyBg 3s ease-in-out forwards}
+#ceremony h2{font-family:'Cinzel Decorative',serif;font-size:36px;font-weight:400;opacity:0;
+  animation:ceremonyText 3s ease-in-out 0.3s forwards;letter-spacing:4px}
+#ceremony p{font-family:'Cinzel',serif;font-size:14px;opacity:0;letter-spacing:6px;text-transform:uppercase;
+  animation:ceremonyText 3s ease-in-out 0.5s forwards}
+@keyframes ceremonyBg{0%{background:rgba(0,0,0,0)}15%{background:rgba(0,0,0,0.7)}85%{background:rgba(0,0,0,0.7)}100%{background:rgba(0,0,0,0)}}
+@keyframes ceremonyText{0%{opacity:0;transform:translateY(20px) scale(0.9)}20%{opacity:1;transform:translateY(0) scale(1)}
+  80%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-10px) scale(1.02)}}
+
+/* ── Legend ── */
+#legend{position:fixed;bottom:52px;left:12px;z-index:20;font-size:11px}
+#legend details{background:rgba(10,10,20,0.85);border:1px solid #2d2b42;border-radius:10px;backdrop-filter:blur(10px);overflow:hidden}
+#legend summary{padding:8px 14px;cursor:pointer;color:#a7a9be;font-size:10px;letter-spacing:1px;text-transform:uppercase;list-style:none}
+#legend summary::-webkit-details-marker{display:none}
+#legend .legend-body{padding:6px 14px 12px}
+.legend-item{display:flex;align-items:center;margin:5px 0;gap:8px;color:#a7a9be}
+.legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* scrollbar */
+#detail-panel::-webkit-scrollbar{width:4px}
+#detail-panel::-webkit-scrollbar-track{background:transparent}
+#detail-panel::-webkit-scrollbar-thumb{background:#2d2b42;border-radius:2px}
+
+/* ── AI Tutor ── */
+#dp-tutor{padding:16px 24px}
+.tutor-btns{display:flex;gap:8px;margin-bottom:0}
+.tutor-btn{flex:1;padding:8px 10px;background:rgba(28,22,46,0.8);border:1px solid #3d3560;border-radius:6px;
+  color:#b89ae8;font-size:10px;font-family:'Cinzel',serif;letter-spacing:0.5px;cursor:pointer;
+  transition:all 0.2s;font-weight:600}
+.tutor-btn:hover{background:rgba(60,50,90,0.8);border-color:#7B4FBF;color:#d0b8ff}
+.tutor-btn:disabled{opacity:0.35;cursor:not-allowed}
+.tutor-response{background:rgba(10,8,20,0.9);border:1px solid #24203a;border-radius:8px;padding:12px 14px;
+  font-size:12px;line-height:1.75;color:#c0c0d0;display:none;max-height:240px;overflow-y:auto;
+  white-space:pre-wrap;font-family:'Inter',sans-serif;margin-top:10px;scrollbar-width:thin}
+.tutor-response.active{display:block}
+.tutor-loading{color:#9a7dcc;font-style:italic;font-size:11px}
+.tutor-server-msg{font-size:10px;color:#ff6b3590;text-align:center;padding:6px 0;display:none;
+  font-family:'Inter',sans-serif}
+.tutor-server-msg.visible{display:block}
+/* ── Realm % ── */
+.realm-pip-row{display:flex;flex-direction:column;align-items:center;gap:1px}
+.realm-pct{font-size:7px;color:#a7a9be70;line-height:1;font-family:'Inter',sans-serif}
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+<div id="cy"></div>
+
+<div id="title-bar">
+  <h1>Arcanum Mathematica<span>A Journey Through the Realms of Mathematics</span></h1>
+</div>
+
+<div id="search-wrap"><input id="search" type="text" placeholder="Search topics..." spellcheck="false"></div>
+
+<div id="controls">
+  <button onclick="cy.fit(undefined,60)" title="Fit all">Fit</button>
+  <button onclick="cy.zoom(cy.zoom()*1.3);cy.center()" title="Zoom in">+</button>
+  <button onclick="cy.zoom(cy.zoom()/1.3);cy.center()" title="Zoom out">&minus;</button>
+  <button onclick="resetProgress()" title="Reset all progress">Reset</button>
+  <button onclick="exportProgress()" title="Export progress as JSON">Export</button>
+</div>
+
+<div id="realm-sidebar"></div>
+
+<div id="stats-bar">
+  <div class="stat"><span>Discovered:</span><span class="stat-val" id="stat-discovered">0 / 107</span></div>
+  <div class="stat"><span>Current Realm:</span><span class="stat-val" id="stat-realm">—</span></div>
+  <div class="stat"><span>Streak:</span><span class="stat-val" id="stat-streak">0 days</span></div>
+</div>
+
+<div id="tooltip"><h4></h4><span class="realm-badge"></span><p></p></div>
+
+<div id="detail-panel">
+  <div class="dp-header">
+    <button class="dp-close" onclick="closePanel()">&times;</button>
+    <span class="dp-realm" id="dp-realm"></span>
+    <div class="dp-title" id="dp-title"></div>
+    <div class="dp-desc" id="dp-desc"></div>
+  </div>
+  <div class="dp-section" id="dp-prereqs-section">
+    <h5>Prerequisites</h5>
+    <div id="dp-prereqs"></div>
+  </div>
+  <div class="dp-section" id="dp-unlocks-section">
+    <h5>Unlocks</h5>
+    <div id="dp-unlocks"></div>
+  </div>
+  <div class="dp-actions" id="dp-actions"></div>
+  <div class="dp-section">
+    <h5>Personal Notes</h5>
+    <textarea class="dp-notes" id="dp-notes" placeholder="Write your thoughts, insights, or reminders..."></textarea>
+  </div>
+  <div id="dp-tutor" class="dp-section">
+    <h5>AI Tutor</h5>
+    <div class="tutor-btns">
+      <button class="tutor-btn" id="tutor-btn-explain" onclick="requestTutor('explain')">✦ Explain This</button>
+      <button class="tutor-btn" id="tutor-btn-problems" onclick="requestTutor('problems')">✦ Practice Problems</button>
+    </div>
+    <div class="tutor-response" id="tutor-response"></div>
+    <div class="tutor-server-msg" id="tutor-hint">Start AI server: cd mathtree-ai &amp;&amp; npm start</div>
+  </div>
+</div>
+
+<div id="ceremony"><h2 id="ceremony-title"></h2><p id="ceremony-sub"></p></div>
+
+<div id="legend">
+  <details>
+    <summary>Legend</summary>
+    <div class="legend-body">
+      <div class="legend-item"><div class="legend-swatch" style="background:#2a2a3a;border:1px solid #3a3a4a"></div>Locked</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#4a4a6a;border:1px solid #8899bb;box-shadow:0 0 4px #8899bb80"></div>Available</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#5a7a6a;border:1px solid #7abba0"></div>In Progress</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#e6a817;border:1px solid #f5d060;box-shadow:0 0 6px #e6a81780"></div>Completed</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#e6a817;border:2px solid #ffd700;box-shadow:0 0 8px #ffd70080"></div>Mastered</div>
+      <div class="legend-item" style="margin-top:6px"><div style="width:10px;border-top:2px dashed #ff6b3560;flex-shrink:0"></div>Cross-path link</div>
+    </div>
+  </details>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA: REALMS
+// ═══════════════════════════════════════════════════════════════════
+const REALMS = {
+  1: { name:'The Primordial Garden', sub:'Where numbers are born', color:'#D4A017', border:'#F5D060', glow:'#D4A01750', locked:'#3A3520' },
+  2: { name:'The Stone Columns', sub:'Structure rises from arithmetic', color:'#5A6A8A', border:'#8899BB', glow:'#5A6A8A50', locked:'#2A2E38' },
+  3: { name:'The Crossroads', sub:'Paths diverge through number and form', color:'#1A8A7A', border:'#40D4B8', glow:'#1A8A7A50', locked:'#1A2E2A' },
+  4: { name:'The Awakening', sub:'Letters replace numbers — abstraction ignites', color:'#7B4FBF', border:'#B89AE8', glow:'#7B4FBF50', locked:'#2A2038' },
+  5: { name:'The Ascent', sub:'The mountain of algebra and proof', color:'#B5334A', border:'#E86B7F', glow:'#B5334A50', locked:'#381A22' },
+  6: { name:'The Deepening', sub:'Crystalline caverns of advanced algebra', color:'#2255AA', border:'#5599EE', glow:'#2255AA50', locked:'#1A2238' },
+  7: { name:'The Convergence', sub:'All paths meet in the temple of angles', color:'#E6A817', border:'#FFD65C', glow:'#E6A81750', locked:'#3A3520' },
+  '8a': { name:'The Infinite Staircase', sub:'Calculus and differential equations', color:'#1B998B', border:'#3DCBB8', glow:'#1B998B50', locked:'#1A2E28' },
+  '8b': { name:'The Crystal Lattice', sub:'Linear algebra — pure structure', color:'#6C5CE7', border:'#A29BFE', glow:'#6C5CE750', locked:'#221E38' },
+};
+const CAPSTONE_COLOR = { color:'#FF6B35', border:'#FF9A6C', glow:'#FF6B3550', locked:'#382218' };
+
+// ═══════════════════════════════════════════════════════════════════
+// DATA: NODES (107 total)
+// ═══════════════════════════════════════════════════════════════════
+const NODES = [
+// ── Realm I: The Primordial Garden ──
+{id:'counting',label:'Counting',r:1,d:'Where all journeys begin. Ancient shepherds placed stones — calculi — to track their flocks, and so mathematics was born.'},
+{id:'number_sense',label:'Number\nSense',r:1,d:'Comparing quantities: more, less, equal. The first ordering that brings structure to chaos.'},
+{id:'add_basic',label:'Addition',r:1,d:'The first act of combination. Two quantities unite to form something greater — the primal spell of arithmetic.'},
+{id:'sub_basic',label:'Subtraction',r:1,d:'The art of taking away. What remains when part of the whole is removed? Addition\'s shadow and twin.'},
+{id:'place_value',label:'Place\nValue',r:1,d:'A digit\'s position determines its power. The Babylonians glimpsed it; the Hindu scholars perfected it.'},
+{id:'shapes_2d',label:'Flat\nShapes',r:1,d:'Circles, squares, triangles — the fundamental forms that compose all of visible reality. Geometry\'s first words.'},
+{id:'patterns',label:'Patterns',r:1,d:'Recognizing recurrence. Patterns are the heartbeat of mathematics, repeating endlessly in nature and number.'},
+{id:'measurement',label:'Measurement',r:1,d:'Assigning numbers to the physical world. Length, weight, capacity — bridging the abstract and the tangible.'},
+{id:'time_money',label:'Time &\nMoney',r:1,d:'Clocks divide the day, coins divide value. Mathematics enters daily life through commerce and timekeeping.'},
+// ── Realm II: The Stone Columns ──
+{id:'mult',label:'Multiplication',r:2,d:'Repeated addition reveals a deeper operation. The times table, memorized by scholars for millennia across every civilization.'},
+{id:'div',label:'Division',r:2,d:'The inverse of multiplication. Fair sharing, partitioning — finding how many times one quantity contains another.'},
+{id:'multi_digit_add',label:'Multi-Digit\nAddition',r:2,d:'Carrying and regrouping — the algorithm that lets us add numbers of any magnitude, digit by patient digit.'},
+{id:'multi_digit_sub',label:'Multi-Digit\nSubtraction',r:2,d:'Borrowing across place values. A mechanical procedure that encodes deep understanding of number structure.'},
+{id:'place_value_ext',label:'Extended\nPlace Value',r:2,d:'Thousands, millions, billions. Each new magnitude opens another chamber of numerical possibility.'},
+{id:'fractions_intro',label:'Intro to\nFractions',r:2,d:'Breaking the whole into parts. Half, third, quarter — the Egyptians wrote fractions with the Eye of Horus.'},
+{id:'geometry_basic',label:'Basic\nGeometry',r:2,d:'Perimeter traces the boundary; area fills the interior. The first quantification of space itself.'},
+{id:'data_graphs',label:'Data &\nGraphs',r:2,d:'Making numbers visible. Bar charts and picture graphs transform raw data into stories the eye can read.'},
+{id:'word_problems',label:'Word\nProblems',r:2,d:'Translating stories into equations. The bridge between natural language and mathematical symbolism.'},
+// ── Realm III: The Crossroads ──
+{id:'fractions',label:'Fractions',r:3,d:'Equivalent fractions, common denominators, mixed numbers. Between any two fractions lie infinitely more — the rationals are dense.'},
+{id:'frac_mult_div',label:'Fraction\nMult & Div',r:3,d:'Multiplying fractions: "of" becomes "times." Dividing: multiply by the reciprocal. Elegant inversions of thought.'},
+{id:'decimals',label:'Decimals',r:3,d:'Fractions in the language of place value. Simon Stevin\'s 1585 notation transformed commerce and science forever.'},
+{id:'dec_operations',label:'Decimal\nOperations',r:3,d:'Arithmetic with decimal points. The rules of alignment and shifting that govern our currency and measurements.'},
+{id:'percents',label:'Percents',r:3,d:'Parts per hundred — a universal language of comparison, from interest rates to probabilities to the chance of rain.'},
+{id:'neg_numbers',label:'Negative\nNumbers',r:3,d:'Below zero lies a mirror world. Chinese scribes used red and black rods; Brahmagupta formalized the rules in 628 AD.'},
+{id:'int_operations',label:'Integer\nOperations',r:3,d:'Arithmetic across the full number line. Negative times negative yields positive — a fact that puzzled minds for centuries.'},
+{id:'ratios',label:'Ratios &\nProportions',r:3,d:'Comparing quantities by division. The golden ratio, pi, the speed of light — all ratios that define our universe.'},
+{id:'order_ops',label:'Order of\nOperations',r:3,d:'PEMDAS: the grammar of mathematical expression. Without agreed conventions, equations dissolve into ambiguity.'},
+{id:'factors_primes',label:'Factors &\nPrimes',r:3,d:'Primes — the atoms of arithmetic. Every integer has a unique prime factorization: the Fundamental Theorem of Arithmetic.'},
+{id:'geometry_mid',label:'Intermediate\nGeometry',r:3,d:'Areas of triangles and parallelograms, volume of prisms. Geometry grows from lines to surfaces to solids.'},
+{id:'data_stats',label:'Statistics\nBasics',r:3,d:'Mean, median, mode — different lenses for finding the center of a dataset. Statistics begins its whispered revelations.'},
+// ── Realm IV: The Awakening ──
+{id:'variables',label:'Variables &\nExpressions',r:4,d:'Letters replace numbers. al-Khwarizmi\'s al-jabr gave algebra its name and mathematics its most powerful instrument.'},
+{id:'one_step_eq',label:'One-Step\nEquations',r:4,d:'Solving for x. One operation guards the unknown. Undo it with its inverse, and the truth stands revealed.'},
+{id:'two_step_eq',label:'Two-Step\nEquations',r:4,d:'Two barriers to the unknown. Peel them away in reverse order — the first taste of algorithmic reasoning.'},
+{id:'inequalities_basic',label:'Basic\nInequalities',r:4,d:'Not everything is equal. Greater than, less than — constraints that define entire regions of possibility on the number line.'},
+{id:'linear_patterns',label:'Linear\nPatterns',r:4,d:'Input becomes output through a rule. The seed of function, the essence of mathematical predictability.'},
+{id:'coord_plane',label:'Coordinate\nPlane',r:4,d:'Descartes\' great synthesis: geometry meets algebra on a grid. Every point has coordinates; every equation has a shape.'},
+{id:'graphing_lines',label:'Graphing\nLines',r:4,d:'y = mx + b. Slope captures rate of change; intercept captures starting position. The simplest function, yet endlessly useful.'},
+{id:'exponents_intro',label:'Exponents',r:4,d:'Repeated multiplication. Powers of 2 double; powers of 10 add zeros. Einstein called compound growth the eighth wonder.'},
+{id:'roots_intro',label:'Square\nRoots',r:4,d:'The inverse of squaring. √2 was the first known irrational — it shattered the Pythagorean belief that all is ratio.'},
+{id:'geometry_trans',label:'Transformations',r:4,d:'Translations, reflections, rotations, dilations. Geometry becomes dynamic — shapes dance across the coordinate plane.'},
+{id:'probability',label:'Probability',r:4,d:'Quantifying uncertainty. Pascal and Fermat exchanged letters about gambling — and probability theory was born.'},
+{id:'angle_relationships',label:'Angle\nRelationships',r:4,d:'Complementary, supplementary, vertical. When parallel lines meet a transversal, angle pairs dance in predictable patterns.'},
+// ── Realm V: The Ascent ──
+{id:'multi_step_eq',label:'Multi-Step\nEquations',r:5,d:'Variables on both sides. Some equations have no solution; others have infinitely many. Existence becomes a question.'},
+{id:'systems_intro',label:'Systems of\nEquations',r:5,d:'Two equations, two unknowns. Where lines intersect, solutions live. Substitution and elimination — methods of revelation.'},
+{id:'linear_ineq_sys',label:'Systems of\nInequalities',r:5,d:'Inequalities carve out feasible regions. Linear programming optimizes within constraints — the mathematics of real-world decisions.'},
+{id:'functions',label:'Functions',r:5,d:'f(x) — a machine transforming input to output. Domain, range, composition. Functions are the native language of science.'},
+{id:'polynomials',label:'Polynomials',r:5,d:'Sums of power terms. From linear to cubic and beyond — each degree adds new curves to the polynomial garden.'},
+{id:'factoring',label:'Factoring',r:5,d:'Decomposing polynomials into irreducible pieces. The reverse of multiplication, and the master key to solving equations.'},
+{id:'quadratics',label:'Quadratic\nEquations',r:5,d:'ax² + bx + c = 0. The quadratic formula, known to Babylonian scribes 4000 years ago, solves every one.'},
+{id:'quad_graphs',label:'Quadratic\nGraphs',r:5,d:'Parabolas — the curves of projectiles, satellite dishes, and suspension bridges. Vertex, axis of symmetry, concavity.'},
+{id:'exponent_rules',label:'Exponent\nRules',r:5,d:'Product rule, quotient rule, power rule. Negative and rational exponents extend the operation into new territories.'},
+{id:'radicals',label:'Radicals',r:5,d:'nth roots and rational exponents. Rationalizing denominators, solving radical equations. The irrational becomes tractable.'},
+{id:'rational_expr',label:'Rational\nExpressions',r:5,d:'Fractions with polynomials. All the rules of fractions, elevated to the algebraic realm. Watch for excluded values.'},
+{id:'rational_eq',label:'Rational\nEquations',r:5,d:'Equations with rational expressions. Beware extraneous solutions — not every algebraic answer survives verification.'},
+{id:'geometry_proof',label:'Geometric\nProofs',r:5,d:'Two-column proofs and congruence theorems: SSS, SAS, ASA. Euclid\'s method — the gold standard of logical certainty.'},
+{id:'circle_geo',label:'Circle\nGeometry',r:5,d:'Inscribed angles, central angles, tangent lines, secants. The circle\'s geometry is among the richest in all mathematics.'},
+{id:'similarity',label:'Similarity',r:5,d:'Same shape, different scale. AA similarity, geometric mean, special right triangles — 30-60-90 and 45-45-90.'},
+{id:'data_regression',label:'Regression',r:5,d:'Fitting curves to scattered data. The line of best fit, correlation — mathematics learns to see pattern in noise.'},
+// ── Realm VI: The Deepening ──
+{id:'abs_value',label:'Absolute\nValue',r:6,d:'Distance from zero, regardless of direction. V-shaped graphs emerge — piecewise linearity in its simplest form.'},
+{id:'poly_graphs',label:'Polynomial\nGraphs',r:6,d:'End behavior, turning points, zeros and multiplicity. Every polynomial tells a story in the shape of its curve.'},
+{id:'poly_div',label:'Polynomial\nDivision',r:6,d:'Long division and synthetic division. The Remainder and Factor Theorems connect a polynomial\'s zeros to its factors.'},
+{id:'complex_numbers',label:'Complex\nNumbers',r:6,d:'i = √(−1). Euler called them "imaginary," yet complex numbers complete algebra — every polynomial now has roots.'},
+{id:'exponential',label:'Exponential\nFunctions',r:6,d:'Growth and decay. Populations double, isotopes halve. The number e ≈ 2.718... emerges as nature\'s own base.'},
+{id:'logarithms',label:'Logarithms',r:6,d:'The inverse of exponentiation. Napier\'s 1614 invention turned multiplication into addition and empowered astronomers.'},
+{id:'log_exp_eq',label:'Log & Exp\nEquations',r:6,d:'Variables in the exponent yield to logarithms. Half-lives, pH scales, Richter magnitudes — all logarithmic.'},
+{id:'sequences_series',label:'Sequences\n& Series',r:6,d:'Arithmetic and geometric progressions. Sigma notation compresses infinite sums. Young Gauss summed 1 to 100 in seconds.'},
+{id:'conic_sections',label:'Conic\nSections',r:6,d:'Slice a cone: ellipses, parabolas, hyperbolas emerge. Apollonius classified them; Kepler found planets follow them.'},
+{id:'matrices_intro',label:'Intro to\nMatrices',r:6,d:'Arrays of numbers encoding transformations. Cayley\'s 1858 invention would reshape mathematics and computer science.'},
+{id:'matrix_systems',label:'Matrix\nSystems',r:6,d:'Solving systems via augmented matrices. Row reduction — a mechanical path to solutions of any linear system.'},
+{id:'vectors_intro',label:'Intro to\nVectors',r:6,d:'Magnitude and direction united. Hamilton searched years to extend complex numbers to 3D — and discovered quaternions.'},
+{id:'combinatorics',label:'Counting &\nCombinatorics',r:6,d:'Permutations, combinations, Pascal\'s triangle, the binomial theorem. The mathematics of "how many ways?"'},
+// ── Realm VII: The Convergence ──
+{id:'trig_ratios',label:'Trig\nRatios',r:7,d:'SOH-CAH-TOA. In a right triangle, three ratios encode all angle-side relationships. Hipparchus tabulated them circa 150 BC.'},
+{id:'unit_circle',label:'The Unit\nCircle',r:7,d:'One circle of radius one contains all of trigonometry. Every angle, every ratio, every wave — encoded in perfect unity.'},
+{id:'trig_graphs',label:'Trig\nGraphs',r:7,d:'Sine waves: the shape of sound, light, electricity, tides. Amplitude, period, phase shift — the parameters of oscillation.'},
+{id:'trig_identities',label:'Trig\nIdentities',r:7,d:'Pythagorean, double-angle, sum-difference. These identities are the algebraic skeleton beneath trigonometry\'s flesh.'},
+{id:'trig_equations',label:'Trig\nEquations',r:7,d:'Solving equations with trig functions. Infinite solutions collapse to finitely many on restricted domains.'},
+{id:'law_of_sines_cos',label:'Law of Sines\n& Cosines',r:7,d:'Beyond right triangles. These laws solve any triangle — navigation, surveying, and astronomy depend on them.'},
+{id:'polar_coords',label:'Polar\nCoordinates',r:7,d:'r and θ replace x and y. Spirals, roses, cardioids bloom in polar gardens — a new way to see the plane.'},
+{id:'parametric',label:'Parametric\nEquations',r:7,d:'Curves traced by a moving point through time. Projectile paths, cycloids, Lissajous figures — motion made mathematical.'},
+{id:'precalculus',label:'Pre-Calculus',r:7,d:'The summit before the infinite. Advanced function analysis, composition, inverses, and the first whispers of limits.'},
+// ── Realm VIII-A: The Infinite Staircase ──
+{id:'limits',label:'Limits &\nContinuity',r:'8a',d:'ε–δ: the rigorous heart of calculus. What happens as we approach — never quite arriving, yet knowing exactly what awaits.'},
+{id:'derivatives',label:'Derivatives',r:'8a',d:'The slope of the tangent line. Newton saw falling apples; Leibniz saw infinitesimal geometry. Together they unveiled the calculus.'},
+{id:'deriv_apps',label:'Applications of\nDerivatives',r:'8a',d:'Optimization, related rates, L\'Hôpital\'s rule. Derivatives answer the practical: maximum profit, minimum cost, fastest path.'},
+{id:'integration',label:'Integration',r:'8a',d:'The Fundamental Theorem unites derivatives and integrals — area under curves becomes antiderivative. Newton and Leibniz\'s miracle.'},
+{id:'int_tech',label:'Integration\nTechniques',r:'8a',d:'By parts, trig substitution, partial fractions. Each technique unlocks integrals that resist simpler methods.'},
+{id:'int_apps',label:'Applications of\nIntegration',r:'8a',d:'Volumes of revolution, arc length, surface area, work. Integration builds three-dimensional objects from two-dimensional slices.'},
+{id:'sequences_calc',label:'Calculus of\nSeries',r:'8a',d:'Convergence tests, Taylor series, power series. Infinite sums can approximate any function — analysis at its purest.'},
+{id:'multivar',label:'Multivariable\nCalculus',r:'8a',d:'Partial derivatives, gradients, Lagrange multipliers. Calculus escapes the line and enters the vast landscape of higher dimensions.'},
+{id:'mult_int',label:'Multiple\nIntegrals',r:'8a',d:'Double and triple integrals. Jacobians, coordinate transforms. Volume, mass, center of gravity — all emerge from integration.'},
+{id:'vec_calc',label:'Vector\nCalculus',r:'8a',d:'Line and surface integrals. Green\'s, Stokes\', Gauss\' theorems — the crown jewels connecting local behavior to global truth.'},
+{id:'ode1',label:'First-Order\nODEs',r:'8a',d:'Separable, exact, linear. Differential equations model everything: populations, circuits, springs, planetary orbits.'},
+{id:'ode2',label:'Second-Order\nODEs',r:'8a',d:'Characteristic equations, undetermined coefficients, variation of parameters. The Wronskian tests for independence of solutions.'},
+{id:'laplace',label:'Laplace\nTransforms',r:'8a',d:'Transform a differential equation into algebra, solve, transform back. Heaviside\'s trick, formalized by Laplace.'},
+{id:'sys_ode',label:'Systems\nof ODEs',r:'8a',d:'Matrix exponentials, phase portraits, stability analysis. Near equilibria, nonlinear systems reveal their linear soul.'},
+{id:'pde_intro',label:'Intro to\nPDEs',r:'8a',d:'Heat, wave, and Laplace equations. Fourier\'s bold claim: any function decomposes into sine waves.'},
+{id:'diffeq_capstone',label:'DIFFERENTIAL\nEQUATIONS',r:'cap_a',d:'Sturm-Liouville theory, Green\'s functions, nonlinear dynamics, bifurcation, chaos. The frontier where equations meet nature\'s full complexity.'},
+// ── Realm VIII-B: The Crystal Lattice ──
+{id:'proofs',label:'Proofs &\nLogic',r:'8b',d:'Direct proof, contradiction, induction. The tools of rigorous reasoning — mathematics\' absolute demand for certainty.'},
+{id:'sets',label:'Set Theory',r:'8b',d:'Sets, relations, functions as mappings. Cantor\'s paradise: even infinity comes in different sizes.'},
+{id:'vectors_formal',label:'Vectors\n(Formal)',r:'8b',d:'Span, linear independence, basis. Vectors freed from coordinates become abstract arrows pointing in any dimension.'},
+{id:'matrices_formal',label:'Matrix\nAlgebra',r:'8b',d:'Multiplication, inverse, transpose, determinants formalized. Cayley\'s creation becomes the universal language of transformation.'},
+{id:'lin_sys',label:'Linear\nSystems',r:'8b',d:'Gaussian elimination, RREF, rank-nullity. Every linear system is either impossible, unique, or infinite — and we can always tell which.'},
+{id:'vec_spaces',label:'Vector\nSpaces',r:'8b',d:'Axiomatic spaces, subspaces, basis, dimension. ℝ¹ is a line, ℝ² a plane — but vector spaces can have any dimension, even infinite.'},
+{id:'lin_trans',label:'Linear\nTransformations',r:'8b',d:'Functions preserving vector structure. Every linear transformation is secretly a matrix — and every matrix is secretly a transformation.'},
+{id:'inner_prod',label:'Inner Product\nSpaces',r:'8b',d:'Inner products generalize angles and lengths. Gram-Schmidt, orthogonal projection, QR factorization, least squares.'},
+{id:'eigen',label:'Eigenvalues &\nEigenvectors',r:'8b',d:'The soul of a matrix: directions unchanged by transformation, only scaled. Diagonalization reveals a matrix\'s deepest structure.'},
+{id:'svd',label:'SVD',r:'8b',d:'Singular Value Decomposition: any matrix decomposed into rotation, scaling, rotation. The Swiss army knife of applied mathematics.'},
+{id:'linalg_capstone',label:'LINEAR\nALGEBRA',r:'cap_b',d:'Spectral theorem, Jordan normal form, abstract fields. The crystalline foundation for quantum mechanics, machine learning, and pure mathematics.'},
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// DATA: EDGES (~170)
+// ═══════════════════════════════════════════════════════════════════
+// Format: [source, target] or [source, target, 'cross'] for cross-path
+const EDGES = [
+// ── Realm I ──
+['counting','number_sense'],['counting','shapes_2d'],['counting','patterns'],
+['number_sense','add_basic'],['number_sense','place_value'],['number_sense','measurement'],
+['add_basic','sub_basic'],['add_basic','time_money'],
+// ── I → II ──
+['sub_basic','mult'],['place_value','mult'],['place_value','multi_digit_add'],['sub_basic','multi_digit_add'],
+// ── Realm II ──
+['mult','div'],['multi_digit_add','multi_digit_sub'],['div','fractions_intro'],
+['shapes_2d','geometry_basic'],['mult','geometry_basic'],['mult','data_graphs'],
+['mult','word_problems'],['multi_digit_sub','word_problems'],['place_value','place_value_ext'],
+// ── II → III ──
+['fractions_intro','fractions'],['multi_digit_sub','fractions'],
+// ── Realm III ──
+['fractions','frac_mult_div'],['fractions','decimals'],['place_value_ext','decimals'],
+['decimals','dec_operations'],['multi_digit_sub','dec_operations'],
+['decimals','percents'],['frac_mult_div','percents'],
+['dec_operations','neg_numbers'],['neg_numbers','int_operations'],
+['frac_mult_div','ratios'],['percents','ratios'],['int_operations','order_ops'],
+['div','factors_primes'],['mult','factors_primes'],
+['geometry_basic','geometry_mid'],['dec_operations','geometry_mid'],
+['data_graphs','data_stats'],['dec_operations','data_stats'],
+// ── III → IV ──
+['order_ops','variables'],['order_ops','exponents_intro'],['factors_primes','exponents_intro'],
+// ── Realm IV ──
+['variables','one_step_eq'],['one_step_eq','two_step_eq'],['frac_mult_div','two_step_eq'],
+['two_step_eq','inequalities_basic'],['variables','linear_patterns'],['ratios','linear_patterns'],
+['geometry_mid','coord_plane'],['int_operations','coord_plane'],
+['coord_plane','graphing_lines'],['linear_patterns','graphing_lines'],
+['exponents_intro','roots_intro'],['geometry_mid','geometry_trans'],['coord_plane','geometry_trans'],
+['fractions','probability'],['data_stats','probability'],['geometry_mid','angle_relationships'],
+// ── IV → V ──
+['two_step_eq','multi_step_eq'],['graphing_lines','multi_step_eq'],
+['graphing_lines','systems_intro'],['graphing_lines','functions'],['linear_patterns','functions'],
+['variables','polynomials'],['exponents_intro','polynomials'],
+['exponents_intro','exponent_rules'],['frac_mult_div','exponent_rules'],
+['roots_intro','quadratics'],['roots_intro','radicals'],['roots_intro','circle_geo'],
+['angle_relationships','geometry_proof'],['geometry_trans','geometry_proof'],
+['ratios','similarity'],['data_stats','data_regression'],['graphing_lines','data_regression'],
+// ── Realm V ──
+['multi_step_eq','systems_intro'],['systems_intro','linear_ineq_sys'],['inequalities_basic','linear_ineq_sys'],
+['polynomials','factoring'],['factoring','quadratics'],['quadratics','quad_graphs'],['functions','quad_graphs'],
+['exponent_rules','radicals'],['factoring','rational_expr'],['frac_mult_div','rational_expr'],
+['rational_expr','rational_eq'],['geometry_proof','circle_geo'],['geometry_proof','similarity'],
+// ── V → VI ──
+['functions','abs_value'],['multi_step_eq','abs_value'],
+['quad_graphs','poly_graphs'],['factoring','poly_graphs'],
+['radicals','complex_numbers'],['quadratics','complex_numbers'],
+['exponent_rules','exponential'],['functions','exponential'],
+['circle_geo','conic_sections'],['quad_graphs','conic_sections'],
+['systems_intro','matrices_intro'],['similarity','vectors_intro'],['coord_plane','vectors_intro'],
+['probability','combinatorics'],['factoring','combinatorics'],
+['linear_patterns','sequences_series'],
+// ── Realm VI ──
+['poly_graphs','poly_div'],['exponential','logarithms'],['logarithms','log_exp_eq'],
+['exponential','sequences_series'],['matrices_intro','matrix_systems'],['systems_intro','matrix_systems'],
+// ── VI → VII ──
+['similarity','trig_ratios'],['roots_intro','trig_ratios'],
+['circle_geo','unit_circle'],['functions','trig_graphs'],
+['complex_numbers','trig_identities'],['vectors_intro','law_of_sines_cos'],
+['conic_sections','polar_coords'],['poly_graphs','precalculus'],['log_exp_eq','precalculus'],
+// ── Realm VII ──
+['trig_ratios','unit_circle'],['unit_circle','trig_graphs'],['unit_circle','trig_identities'],
+['trig_identities','trig_equations'],['trig_ratios','law_of_sines_cos'],
+['unit_circle','polar_coords'],['polar_coords','parametric'],['trig_graphs','parametric'],
+['trig_graphs','precalculus'],
+// ── VII → VIII ──
+['precalculus','limits'],['precalculus','proofs'],
+['trig_identities','int_tech'],['sequences_series','sequences_calc'],
+['vectors_intro','vectors_formal'],['matrices_intro','matrices_formal'],
+['complex_numbers','ode2'],
+// ── Realm VIII-A ──
+['limits','derivatives'],['derivatives','deriv_apps'],['derivatives','integration'],
+['integration','int_tech'],['int_tech','int_apps'],['int_tech','sequences_calc'],
+['deriv_apps','multivar'],['int_tech','mult_int'],['multivar','mult_int'],
+['multivar','vec_calc'],['mult_int','vec_calc'],
+['deriv_apps','ode1'],['integration','ode1'],
+['ode1','ode2'],['ode2','laplace'],['ode2','sys_ode'],
+['laplace','pde_intro'],['sys_ode','pde_intro'],['vec_calc','pde_intro'],['sequences_calc','pde_intro'],
+['pde_intro','diffeq_capstone'],
+// ── Realm VIII-B ──
+['proofs','sets'],['proofs','vectors_formal'],
+['vectors_formal','matrices_formal'],['matrices_formal','lin_sys'],
+['sets','vec_spaces'],['lin_sys','vec_spaces'],
+['vec_spaces','lin_trans'],['matrices_formal','lin_trans'],
+['lin_trans','inner_prod'],['vectors_formal','inner_prod'],
+['lin_trans','eigen'],['eigen','svd'],['inner_prod','svd'],
+['svd','linalg_capstone'],
+// ── Cross-path links ──
+['eigen','sys_ode','cross'],['matrices_formal','sys_ode','cross'],
+['lin_trans','multivar','cross'],['inner_prod','vec_calc','cross'],
+['eigen','pde_intro','cross'],['vec_spaces','sequences_calc','cross'],
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+const STORAGE_KEY = 'arcanum_mathematica_v2';
+let state;
+
+function defaultState() {
+  return {
+    version: 2,
+    created: new Date().toISOString(),
+    lastAccessed: new Date().toISOString(),
+    nodes: { counting: { status: 'available', progress: 0, notes: '' } },
+    realmsUnlocked: [1],
+    streak: 0,
+    lastActiveDate: null,
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      state = JSON.parse(raw);
+      // Update streak
+      const today = new Date().toISOString().split('T')[0];
+      if (state.lastActiveDate) {
+        const last = new Date(state.lastActiveDate);
+        const diff = Math.floor((new Date(today) - last) / 86400000);
+        if (diff === 1) state.streak = (state.streak || 0) + 1;
+        else if (diff > 1) state.streak = 0;
+      }
+      state.lastActiveDate = today;
+      state.lastAccessed = new Date().toISOString();
+    } else {
+      state = defaultState();
+      state.lastActiveDate = new Date().toISOString().split('T')[0];
+    }
+  } catch (e) {
+    state = defaultState();
+  }
+  saveState();
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function getStatus(id) {
+  return state.nodes[id]?.status || 'locked';
+}
+
+function setStatus(id, status, progress) {
+  if (!state.nodes[id]) state.nodes[id] = { status: 'locked', progress: 0, notes: '' };
+  state.nodes[id].status = status;
+  if (progress !== undefined) state.nodes[id].progress = progress;
+  if (status === 'completed' || status === 'mastered') {
+    state.nodes[id].progress = 100;
+    state.nodes[id].completedAt = new Date().toISOString();
+  }
+  state.lastActiveDate = new Date().toISOString().split('T')[0];
+  saveState();
+  cascadeUnlocks();
+  refreshGraph();
+  updateStats();
+}
+
+function getNotes(id) { return state.nodes[id]?.notes || ''; }
+function setNotes(id, text) {
+  if (!state.nodes[id]) state.nodes[id] = { status: 'locked', progress: 0, notes: '' };
+  state.nodes[id].notes = text;
+  saveState();
+}
+
+// Build adjacency
+const PREREQS = {}; // nodeId -> [prerequisite node ids]
+const CHILDREN = {}; // nodeId -> [child node ids]
+NODES.forEach(n => { PREREQS[n.id] = []; CHILDREN[n.id] = []; });
+EDGES.forEach(([s, t]) => {
+  if (PREREQS[t]) PREREQS[t].push(s);
+  if (CHILDREN[s]) CHILDREN[s].push(t);
+});
+
+function canUnlock(id) {
+  const prereqs = PREREQS[id];
+  if (!prereqs || prereqs.length === 0) return true;
+  // All non-cross-path prereqs must be completed
+  const reqEdges = EDGES.filter(e => e[1] === id && e[2] !== 'cross');
+  return reqEdges.every(e => {
+    const st = getStatus(e[0]);
+    return st === 'completed' || st === 'mastered';
+  });
+}
+
+function cascadeUnlocks() {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    NODES.forEach(n => {
+      const st = getStatus(n.id);
+      if (st === 'locked' && canUnlock(n.id)) {
+        if (!state.nodes[n.id]) state.nodes[n.id] = { status: 'available', progress: 0, notes: '' };
+        else state.nodes[n.id].status = 'available';
+        changed = true;
+        // Check realm unlock
+        const r = n.r;
+        if (!state.realmsUnlocked.includes(r)) {
+          state.realmsUnlocked.push(r);
+          setTimeout(() => playCeremony(r), 300);
+        }
+      }
+    });
+  }
+  saveState();
+}
+
+function resetProgress() {
+  if (!confirm('Reset all progress? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = defaultState();
+  saveState();
+  cascadeUnlocks();
+  refreshGraph();
+  updateStats();
+  closePanel();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NODE STYLING HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function realmOf(n) {
+  if (n.r === 'cap_a') return REALMS['8a'];
+  if (n.r === 'cap_b') return REALMS['8b'];
+  return REALMS[n.r];
+}
+function colorsOf(n) {
+  const isCapstone = n.r === 'cap_a' || n.r === 'cap_b';
+  const realm = realmOf(n);
+  if (isCapstone) return { ...CAPSTONE_COLOR, realmColor: realm.color };
+  return realm;
+}
+function nodeColor(n) {
+  const st = getStatus(n.id);
+  const c = colorsOf(n);
+  switch (st) {
+    case 'locked': return { bg: c.locked, border: '#3a3a4a', fg: '#5a5a6a', opacity: 0.35, shadow: 'none', borderW: 1 };
+    case 'available': return { bg: '#1a1a2e', border: c.border, fg: '#d0d0e0', opacity: 0.88, shadow: c.glow, borderW: 2 };
+    case 'in_progress': return { bg: c.color + '90', border: c.border, fg: '#fffffe', opacity: 0.92, shadow: c.glow, borderW: 2 };
+    case 'completed': return { bg: c.color, border: c.border, fg: '#fffffe', opacity: 1, shadow: c.glow, borderW: 2 };
+    case 'mastered': return { bg: c.color, border: '#FFD700', fg: '#fffffe', opacity: 1, shadow: '#FFD70060', borderW: 3 };
+    default: return { bg: c.locked, border: '#3a3a4a', fg: '#5a5a6a', opacity: 0.35, shadow: 'none', borderW: 1 };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CYTOSCAPE INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════
+let cy;
+
+function buildElements() {
+  const cyNodes = NODES.map(n => {
+    const c = nodeColor(n);
+    const isCapstone = n.r === 'cap_a' || n.r === 'cap_b';
+    const isRoot = n.id === 'counting';
+    return {
+      data: {
+        id: n.id, label: n.label, desc: n.desc, realm: n.r,
+        bgColor: c.bg, fgColor: c.fg, borderColor: c.border,
+        borderW: c.borderW, nodeOpacity: c.opacity,
+        shadowColor: c.shadow,
+        w: isCapstone ? 160 : isRoot ? 145 : 120,
+        h: isCapstone ? 60 : isRoot ? 55 : 46,
+        fs: isCapstone ? 13 : isRoot ? 12 : 10,
+        fw: (isCapstone || isRoot) ? 700 : 600,
+        shape: isCapstone ? 'octagon' : isRoot ? 'diamond' : 'cut-rectangle',
+      }
+    };
+  });
+
+  const cyEdges = EDGES.map(([s, t, type], i) => ({
+    data: {
+      id: 'e' + i, source: s, target: t,
+      isCross: type === 'cross',
+      lineColor: type === 'cross' ? '#ff6b3530' : '#a7a9be18',
+      lineStyle: type === 'cross' ? 'dashed' : 'solid',
+      lineWidth: type === 'cross' ? 1 : 1.5,
+      arrowColor: type === 'cross' ? '#ff6b3530' : '#a7a9be30',
+    }
+  }));
+
+  return { nodes: cyNodes, edges: cyEdges };
+}
+
+function initCytoscape() {
+  const els = buildElements();
+  cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: els,
+    style: [
+      { selector: 'node', style: {
+        'label': 'data(label)', 'text-wrap': 'wrap', 'text-valign': 'center', 'text-halign': 'center',
+        'font-size': 'data(fs)', 'font-weight': 'data(fw)',
+        'font-family': '"Cinzel", Georgia, serif',
+        'color': 'data(fgColor)', 'background-color': 'data(bgColor)',
+        'border-color': 'data(borderColor)', 'border-width': 'data(borderW)',
+        'width': 'data(w)', 'height': 'data(h)', 'shape': 'data(shape)',
+        'text-max-width': '110px', 'opacity': 'data(nodeOpacity)',
+        'shadow-blur': 15, 'shadow-color': 'data(shadowColor)', 'shadow-opacity': 0.5,
+        'shadow-offset-x': 0, 'shadow-offset-y': 0,
+        'transition-property': 'opacity, background-color, border-color, border-width, shadow-blur, shadow-opacity',
+        'transition-duration': '0.35s',
+        'overlay-opacity': 0,
+      }},
+      { selector: 'edge', style: {
+        'width': 'data(lineWidth)', 'line-color': 'data(lineColor)',
+        'target-arrow-color': 'data(arrowColor)', 'target-arrow-shape': 'triangle',
+        'arrow-scale': 0.6, 'curve-style': 'bezier', 'line-style': 'data(lineStyle)',
+        'line-dash-pattern': [6, 4], 'opacity': 0.9,
+        'transition-property': 'opacity, line-color, width',
+        'transition-duration': '0.3s',
+      }},
+      { selector: '.dimmed', style: { 'opacity': 0.06 } },
+      { selector: '.highlighted', style: { 'opacity': 1 } },
+      { selector: '.highlighted-edge', style: {
+        'opacity': 1, 'width': 2.5, 'line-color': '#fffffe50', 'target-arrow-color': '#fffffe70',
+      }},
+      { selector: '.search-dimmed', style: { 'opacity': 0.05 } },
+      { selector: '.search-match', style: { 'opacity': 1, 'border-width': 3 } },
+    ],
+    layout: {
+      name: 'dagre', rankDir: 'TB',
+      nodeSep: 40, rankSep: 85, edgeSep: 12,
+      padding: 100, spacingFactor: 1.05,
+      ranker: 'tight-tree',
+    },
+    minZoom: 0.12, maxZoom: 3.5, wheelSensitivity: 0.25,
+  });
+
+  // ── Hover: tooltip + highlight ──
+  cy.on('mouseover', 'node', e => {
+    const node = e.target;
+    const d = node.data();
+    const ndata = NODES.find(n => n.id === d.id);
+    const realm = realmOf(ndata);
+    const tt = document.getElementById('tooltip');
+    tt.querySelector('h4').textContent = d.label.replace(/\n/g, ' ');
+    tt.querySelector('h4').style.color = colorsOf(ndata).color;
+    tt.querySelector('.realm-badge').textContent = typeof ndata.r === 'number'
+      ? `Realm ${ndata.r}: ${realm.name}` : realm.name;
+    tt.querySelector('.realm-badge').style.color = realm.border;
+    tt.querySelector('p').textContent = d.desc;
+    tt.style.display = 'block';
+    // Highlight
+    const hood = node.closedNeighborhood();
+    cy.elements().not(hood).addClass('dimmed');
+    hood.nodes().addClass('highlighted');
+    hood.edges().addClass('highlighted-edge');
+  });
+
+  cy.on('mouseout', 'node', () => {
+    document.getElementById('tooltip').style.display = 'none';
+    cy.elements().removeClass('dimmed highlighted highlighted-edge');
+  });
+
+  cy.on('mousemove', e => {
+    const tt = document.getElementById('tooltip');
+    if (tt.style.display === 'none') return;
+    const x = e.originalEvent.clientX, y = e.originalEvent.clientY;
+    const pad = 16, tw = 300;
+    tt.style.left = (x + tw + pad > window.innerWidth ? x - tw - pad : x + pad) + 'px';
+    tt.style.top = (y + 160 > window.innerHeight ? y - 160 : y + pad) + 'px';
+  });
+
+  // ── Click: detail panel ──
+  cy.on('tap', 'node', e => {
+    openPanel(e.target.data().id);
+  });
+  cy.on('tap', e => {
+    if (e.target === cy) closePanel();
+  });
+
+  cy.ready(() => cy.fit(undefined, 80));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// REFRESH GRAPH (update node visuals from state)
+// ═══════════════════════════════════════════════════════════════════
+function refreshGraph() {
+  if (!cy) return;
+  NODES.forEach(n => {
+    const node = cy.getElementById(n.id);
+    if (!node.length) return;
+    const c = nodeColor(n);
+    node.data('bgColor', c.bg);
+    node.data('fgColor', c.fg);
+    node.data('borderColor', c.border);
+    node.data('borderW', c.borderW);
+    node.data('nodeOpacity', c.opacity);
+    node.data('shadowColor', c.shadow);
+  });
+  // Update edge brightness for completed paths
+  EDGES.forEach(([s, t, type], i) => {
+    const edge = cy.getElementById('e' + i);
+    if (!edge.length) return;
+    const ss = getStatus(s), ts = getStatus(t);
+    const bothDone = (ss === 'completed' || ss === 'mastered') && (ts === 'completed' || ts === 'mastered');
+    if (type === 'cross') {
+      edge.data('lineColor', bothDone ? '#ff6b3560' : '#ff6b3518');
+      edge.data('arrowColor', bothDone ? '#ff6b3560' : '#ff6b3518');
+    } else {
+      edge.data('lineColor', bothDone ? '#a7a9be50' : '#a7a9be18');
+      edge.data('arrowColor', bothDone ? '#a7a9be60' : '#a7a9be30');
+      edge.data('lineWidth', bothDone ? 2 : 1.5);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════════════════
+let openNodeId = null;
+
+function openPanel(id) {
+  openNodeId = id;
+  const n = NODES.find(x => x.id === id);
+  const realm = realmOf(n);
+  const st = getStatus(id);
+  const panel = document.getElementById('detail-panel');
+  const c = colorsOf(n);
+
+  document.getElementById('dp-realm').textContent = typeof n.r === 'number'
+    ? `Realm ${n.r} — ${realm.name}` : realm.name;
+  document.getElementById('dp-realm').style.color = realm.border;
+  document.getElementById('dp-title').textContent = n.label.replace(/\n/g, ' ');
+  document.getElementById('dp-title').style.color = c.color;
+  document.getElementById('dp-desc').textContent = n.desc;
+
+  // Prerequisites
+  const prereqsDiv = document.getElementById('dp-prereqs');
+  prereqsDiv.innerHTML = '';
+  const prereqs = PREREQS[id] || [];
+  if (prereqs.length === 0) {
+    prereqsDiv.innerHTML = '<div class="prereq-item" style="color:#5a5a7a">None — this is where the journey begins</div>';
+  } else {
+    prereqs.forEach(pid => {
+      const pn = NODES.find(x => x.id === pid);
+      const ps = getStatus(pid);
+      const done = ps === 'completed' || ps === 'mastered';
+      const dot = document.createElement('div');
+      dot.className = 'prereq-dot';
+      dot.style.background = done ? '#2dc653' : '#5a5a6a';
+      const txt = document.createElement('span');
+      txt.textContent = pn.label.replace(/\n/g, ' ');
+      txt.style.color = done ? '#c0c0d0' : '#5a5a6a';
+      if (done) txt.style.textDecoration = 'line-through';
+      const item = document.createElement('div');
+      item.className = 'prereq-item';
+      item.appendChild(dot);
+      item.appendChild(txt);
+      item.style.cursor = 'pointer';
+      item.onclick = () => { openPanel(pid); cy.center(cy.getElementById(pid)); };
+      prereqsDiv.appendChild(item);
+    });
+  }
+
+  // Unlocks
+  const unlocksDiv = document.getElementById('dp-unlocks');
+  unlocksDiv.innerHTML = '';
+  const children = CHILDREN[id] || [];
+  if (children.length === 0) {
+    unlocksDiv.innerHTML = '<div class="unlock-item">This is a capstone — the culmination of the path</div>';
+  } else {
+    children.forEach(cid => {
+      const cn = NODES.find(x => x.id === cid);
+      const cs = getStatus(cid);
+      const item = document.createElement('div');
+      item.className = 'unlock-item';
+      item.innerHTML = `<span style="color:${cs === 'locked' ? '#3a3a4a' : colorsOf(cn).border}">\u25C6</span> ${cn.label.replace(/\n/g, ' ')}`;
+      item.style.cursor = 'pointer';
+      item.onclick = () => { openPanel(cid); cy.center(cy.getElementById(cid)); };
+      unlocksDiv.appendChild(item);
+    });
+  }
+
+  // Actions
+  const actionsDiv = document.getElementById('dp-actions');
+  actionsDiv.innerHTML = '';
+
+  if (st === 'locked') {
+    const btn = document.createElement('button');
+    btn.className = 'dp-btn dp-btn-secondary';
+    btn.disabled = true;
+    btn.textContent = 'Locked — Complete Prerequisites';
+    actionsDiv.appendChild(btn);
+  } else if (st === 'available') {
+    const btn = document.createElement('button');
+    btn.className = 'dp-btn dp-btn-primary';
+    btn.textContent = 'Begin Study';
+    btn.onclick = () => { setStatus(id, 'in_progress', 0); openPanel(id); particles.burst(cy.getElementById(id)); };
+    actionsDiv.appendChild(btn);
+  } else if (st === 'in_progress') {
+    // Progress bar
+    const wrap = document.createElement('div');
+    wrap.className = 'dp-progress-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'dp-progress-bar';
+    const fill = document.createElement('div');
+    fill.className = 'dp-progress-fill';
+    const prog = state.nodes[id]?.progress || 0;
+    fill.style.width = prog + '%';
+    fill.style.background = `linear-gradient(90deg, ${c.color}, ${c.border})`;
+    bar.appendChild(fill);
+    const pct = document.createElement('span');
+    pct.className = 'dp-progress-pct';
+    pct.textContent = prog + '%';
+    wrap.appendChild(bar);
+    wrap.appendChild(pct);
+    actionsDiv.appendChild(wrap);
+
+    // Slider
+    const slider = document.createElement('input');
+    slider.type = 'range'; slider.min = 0; slider.max = 100; slider.value = prog;
+    slider.style.cssText = 'width:100%;accent-color:' + c.color;
+    slider.oninput = () => {
+      const v = parseInt(slider.value);
+      fill.style.width = v + '%';
+      pct.textContent = v + '%';
+      state.nodes[id].progress = v;
+      saveState();
+    };
+    actionsDiv.appendChild(slider);
+
+    const btn = document.createElement('button');
+    btn.className = 'dp-btn dp-btn-primary';
+    btn.textContent = 'Mark Complete';
+    btn.onclick = () => { setStatus(id, 'completed'); openPanel(id); particles.burst(cy.getElementById(id)); };
+    actionsDiv.appendChild(btn);
+  } else if (st === 'completed') {
+    const info = document.createElement('div');
+    info.style.cssText = 'text-align:center;color:#2dc653;font-size:13px;margin:4px 0';
+    info.textContent = '\u2713 Completed' + (state.nodes[id]?.completedAt ? ' on ' + state.nodes[id].completedAt.split('T')[0] : '');
+    actionsDiv.appendChild(info);
+
+    const btn = document.createElement('button');
+    btn.className = 'dp-btn dp-btn-primary';
+    btn.style.background = 'linear-gradient(135deg, #FFD700, #DAA520)';
+    btn.textContent = 'Mark as Mastered';
+    btn.onclick = () => { setStatus(id, 'mastered'); openPanel(id); particles.burst(cy.getElementById(id)); };
+    actionsDiv.appendChild(btn);
+
+    const btn2 = document.createElement('button');
+    btn2.className = 'dp-btn dp-btn-secondary';
+    btn2.textContent = 'Revert to In Progress';
+    btn2.onclick = () => { setStatus(id, 'in_progress', 50); openPanel(id); };
+    actionsDiv.appendChild(btn2);
+  } else if (st === 'mastered') {
+    const info = document.createElement('div');
+    info.style.cssText = 'text-align:center;color:#FFD700;font-size:14px;font-family:Cinzel,serif;letter-spacing:2px;margin:8px 0';
+    info.textContent = '\u2726 MASTERED \u2726';
+    actionsDiv.appendChild(info);
+
+    const btn2 = document.createElement('button');
+    btn2.className = 'dp-btn dp-btn-secondary';
+    btn2.textContent = 'Revert to Completed';
+    btn2.onclick = () => { setStatus(id, 'completed'); openPanel(id); };
+    actionsDiv.appendChild(btn2);
+  }
+
+  // Notes
+  const notes = document.getElementById('dp-notes');
+  notes.value = getNotes(id);
+  notes.oninput = () => setNotes(id, notes.value);
+
+  // Clear tutor panel
+  const tutorResp = document.getElementById('tutor-response');
+  const tutorHint = document.getElementById('tutor-hint');
+  if (tutorResp) { tutorResp.className = 'tutor-response'; tutorResp.textContent = ''; }
+  if (tutorHint) tutorHint.className = 'tutor-server-msg';
+
+  panel.classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  openNodeId = null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════════════════════
+const searchInput = document.getElementById('search');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) {
+    cy.elements().removeClass('search-dimmed search-match');
+    return;
+  }
+  cy.nodes().forEach(node => {
+    const label = node.data('label').toLowerCase().replace(/\n/g, ' ');
+    const desc = (node.data('desc') || '').toLowerCase();
+    if (label.includes(q) || desc.includes(q)) {
+      node.removeClass('search-dimmed').addClass('search-match');
+    } else {
+      node.removeClass('search-match').addClass('search-dimmed');
+    }
+  });
+  cy.edges().addClass('search-dimmed');
+});
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    searchInput.value = '';
+    cy.elements().removeClass('search-dimmed search-match');
+    searchInput.blur();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// REALM SIDEBAR
+// ═══════════════════════════════════════════════════════════════════
+function getRealmProgress(realmKey) {
+  const realmNodes = NODES.filter(n =>
+    n.r === realmKey ||
+    (realmKey === '8a' && n.r === 'cap_a') ||
+    (realmKey === '8b' && n.r === 'cap_b')
+  );
+  if (!realmNodes.length) return 0;
+  const done = realmNodes.filter(n => {
+    const s = getStatus(n.id);
+    return s === 'completed' || s === 'mastered';
+  }).length;
+  return Math.round((done / realmNodes.length) * 100);
+}
+
+function buildRealmSidebar() {
+  const sidebar = document.getElementById('realm-sidebar');
+  sidebar.innerHTML = '';
+  const realmKeys = [1,2,3,4,5,6,7,'8a','8b'];
+  const labels = ['I','II','III','IV','V','VI','VII','∞','◇'];
+  realmKeys.forEach((k, i) => {
+    const r = REALMS[k];
+    const pct = getRealmProgress(k);
+    const wrap = document.createElement('div');
+    wrap.className = 'realm-pip-row';
+    const pip = document.createElement('div');
+    pip.className = 'realm-pip';
+    pip.style.background = pct > 0 ? r.color + (pct === 100 ? '55' : '30') : r.color + '18';
+    pip.style.color = r.border;
+    pip.style.setProperty('--rc', r.color);
+    pip.style.borderColor = r.color + (pct > 0 ? '70' : '30');
+    pip.textContent = labels[i];
+    pip.title = r.name + (pct > 0 ? ` — ${pct}% complete` : '');
+    pip.onclick = () => {
+      const nodesInRealm = cy.nodes().filter(n => {
+        const nd = NODES.find(x => x.id === n.data('id'));
+        return nd && (nd.r === k || (k === '8a' && nd.r === 'cap_a') || (k === '8b' && nd.r === 'cap_b'));
+      });
+      if (nodesInRealm.length) cy.fit(nodesInRealm, 80);
+      document.querySelectorAll('.realm-pip').forEach(p => p.classList.remove('active'));
+      pip.classList.add('active');
+    };
+    wrap.appendChild(pip);
+    if (pct > 0) {
+      const pctEl = document.createElement('div');
+      pctEl.className = 'realm-pct';
+      pctEl.textContent = pct + '%';
+      wrap.appendChild(pctEl);
+    }
+    sidebar.appendChild(wrap);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STATS BAR
+// ═══════════════════════════════════════════════════════════════════
+function updateStats() {
+  let completed = 0;
+  NODES.forEach(n => {
+    const s = getStatus(n.id);
+    if (s === 'completed' || s === 'mastered') completed++;
+  });
+  document.getElementById('stat-discovered').textContent = completed + ' / ' + NODES.length;
+  document.getElementById('stat-streak').textContent = (state.streak || 0) + ' day' + (state.streak !== 1 ? 's' : '');
+  // Find current realm (most advanced with available/in_progress nodes)
+  const order = [1,2,3,4,5,6,7,'8a','8b'];
+  let currentRealm = 1;
+  NODES.forEach(n => {
+    const s = getStatus(n.id);
+    if (s === 'available' || s === 'in_progress') {
+      const idx = order.indexOf(n.r);
+      if (idx > order.indexOf(currentRealm)) currentRealm = n.r;
+    }
+  });
+  const cr = REALMS[currentRealm];
+  document.getElementById('stat-realm').textContent = cr ? cr.name : '—';
+  buildRealmSidebar();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PARTICLE SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+const particles = (() => {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const ambient = [];
+  const bursts = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Seed ambient particles
+  for (let i = 0; i < 80; i++) {
+    ambient.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.5 + 0.3,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: -(Math.random() * 0.3 + 0.05),
+      a: Math.random() * 0.3 + 0.05,
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: Math.random() * 0.02 + 0.005,
+    });
+  }
+
+  function burst(cyNode) {
+    if (!cyNode || !cyNode.length) return;
+    const pos = cyNode.renderedPosition();
+    const nd = NODES.find(n => n.id === cyNode.data('id'));
+    const c = colorsOf(nd);
+    for (let i = 0; i < 28; i++) {
+      const angle = (Math.PI * 2 * i) / 28 + Math.random() * 0.3;
+      const speed = Math.random() * 3 + 1.5;
+      bursts.push({
+        x: pos.x, y: pos.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: Math.random() * 2.5 + 1,
+        color: c.border || c.color,
+        life: 1.0,
+        decay: Math.random() * 0.015 + 0.01,
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+
+    // Ambient
+    ambient.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.twinkle += p.twinkleSpeed;
+      if (p.y < -5) { p.y = H + 5; p.x = Math.random() * W; }
+      if (p.x < -5) p.x = W + 5;
+      if (p.x > W + 5) p.x = -5;
+      const alpha = p.a * (0.5 + 0.5 * Math.sin(p.twinkle));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(220, 210, 180, ${alpha})`;
+      ctx.fill();
+    });
+
+    // Bursts
+    for (let i = bursts.length - 1; i >= 0; i--) {
+      const p = bursts[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+      p.life -= p.decay;
+      if (p.life <= 0) { bursts.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + Math.floor(p.life * 200).toString(16).padStart(2, '0');
+      ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+  return { burst };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// CEREMONIES
+// ═══════════════════════════════════════════════════════════════════
+function playCeremony(realmKey) {
+  if (realmKey === 1) return; // Don't ceremony for the starting realm
+  const r = REALMS[realmKey];
+  if (!r) return;
+  const overlay = document.getElementById('ceremony');
+  const title = document.getElementById('ceremony-title');
+  const sub = document.getElementById('ceremony-sub');
+  title.textContent = r.name;
+  title.style.color = r.border;
+  sub.textContent = r.sub;
+  sub.style.color = r.color;
+  overlay.classList.add('active');
+  // Burst particles in center
+  for (let i = 0; i < 40; i++) {
+    const angle = (Math.PI * 2 * i) / 40;
+    const speed = Math.random() * 4 + 2;
+    const canvas = document.getElementById('particle-canvas');
+    // Access bursts through a temporary burst at center
+    setTimeout(() => {
+      const cx = window.innerWidth / 2, cy_pos = window.innerHeight / 2;
+      const ctx = canvas.getContext('2d');
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(angle) * speed * 30, cy_pos + Math.sin(angle) * speed * 30, 2, 0, Math.PI * 2);
+      ctx.fillStyle = r.border + '80';
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }, i * 30);
+  }
+  setTimeout(() => overlay.classList.remove('active'), 3200);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// AI TUTOR
+// ═══════════════════════════════════════════════════════════════════
+async function requestTutor(type) {
+  if (!openNodeId) return;
+  const n = NODES.find(x => x.id === openNodeId);
+  const realm = realmOf(n);
+  const resp = document.getElementById('tutor-response');
+  const hint = document.getElementById('tutor-hint');
+  const btnExplain = document.getElementById('tutor-btn-explain');
+  const btnProbs = document.getElementById('tutor-btn-problems');
+
+  resp.className = 'tutor-response active tutor-loading';
+  resp.textContent = type === 'explain' ? 'The oracle contemplates...' : 'Forging your trials...';
+  hint.className = 'tutor-server-msg';
+  btnExplain.disabled = true;
+  btnProbs.disabled = true;
+
+  try {
+    const res = await fetch('http://localhost:3847/api/tutor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nodeId: openNodeId,
+        nodeLabel: n.label.replace(/\n/g, ' '),
+        nodeDesc: n.d,
+        realm: realm.name,
+        request: type
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    resp.className = 'tutor-response active';
+    resp.textContent = data.response;
+  } catch (e) {
+    resp.className = 'tutor-response';
+    resp.textContent = '';
+    hint.className = 'tutor-server-msg visible';
+  } finally {
+    btnExplain.disabled = false;
+    btnProbs.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════════════
+function exportProgress() {
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'arcanum-progress-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+loadState();
+cascadeUnlocks();
+initCytoscape();
+buildRealmSidebar();
+updateStats();
+</script>
+</body>
+</html>
