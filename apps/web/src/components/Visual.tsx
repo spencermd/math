@@ -26,7 +26,64 @@ export function VisualView({ visual }: { visual: Visual }) {
       return <Venn {...visual} />;
     case 'fraction-bars':
       return <FractionBars {...visual} />;
+    case 'figure':
+      return <Figure {...visual} />;
   }
+}
+
+/** A geometric diagram, scaled to fit. */
+function Figure({ box, shapes, grid, caption }: Of<'figure'>) {
+  const [x0, y0, x1, y1] = box;
+  const PADDING = 26;
+  const scale = Math.min(300 / (x1 - x0), 240 / (y1 - y0));
+  const W = (x1 - x0) * scale + 2 * PADDING;
+  const H = (y1 - y0) * scale + 2 * PADDING;
+  const X = (x: number) => PADDING + (x - x0) * scale;
+  const Y = (y: number) => PADDING + (y1 - y) * scale;
+  const cls = (fill?: 'shade' | 'erase', dashed?: boolean) =>
+    `figure-shape${fill ? ` figure-${fill}` : ''}${dashed ? ' figure-dashed' : ''}`;
+  const lines: number[][] = [];
+  if (grid) {
+    for (let x = Math.ceil(x0); x <= x1; x++) lines.push([X(x), Y(y0), X(x), Y(y1), x === 0 ? 1 : 0]);
+    for (let y = Math.ceil(y0); y <= y1; y++) lines.push([X(x0), Y(y), X(x1), Y(y), y === 0 ? 1 : 0]);
+  }
+
+  return (
+    <div className="visual">
+      <div className="line-scroll">
+        <svg className="figure" viewBox={`0 0 ${W} ${H}`} style={{ width: W, maxWidth: '100%' }} role="img" aria-label={caption ?? 'Diagram'}>
+          {lines.map(([a, b, c, d, axis], i) => (
+            <line key={`g${i}`} x1={a} y1={b} x2={c} y2={d} className={axis ? 'figure-axis' : 'figure-grid'} />
+          ))}
+          {shapes.map((s, i) => {
+            switch (s.type) {
+              case 'polygon':
+                return <polygon key={i} className={cls(s.fill, s.dashed)} points={s.points.map(([x, y]) => `${X(x)},${Y(y)}`).join(' ')} />;
+              case 'segment':
+                return <line key={i} className={cls(undefined, s.dashed)} x1={X(s.from[0])} y1={Y(s.from[1])} x2={X(s.to[0])} y2={Y(s.to[1])} />;
+              case 'circle':
+                return <circle key={i} className={cls(s.fill, s.dashed)} cx={X(s.center[0])} cy={Y(s.center[1])} r={s.r * scale} />;
+              case 'sector': {
+                const rad = (deg: number) => (deg * Math.PI) / 180;
+                const [cx, cy] = [X(s.center[0]), Y(s.center[1])];
+                const r = s.r * scale;
+                const [ax, ay] = [cx + r * Math.cos(rad(s.from)), cy - r * Math.sin(rad(s.from))];
+                const [bx, by] = [cx + r * Math.cos(rad(s.to)), cy - r * Math.sin(rad(s.to))];
+                const large = s.to - s.from > 180 ? 1 : 0;
+                const arc = `M ${ax} ${ay} A ${r} ${r} 0 ${large} 0 ${bx} ${by}`;
+                return <path key={i} className={cls(s.arcOnly ? undefined : s.fill)} d={s.arcOnly ? arc : `${arc} L ${cx} ${cy} Z`} />;
+              }
+              case 'point':
+                return <circle key={i} className="figure-point" cx={X(s.at[0])} cy={Y(s.at[1])} r={3.5} />;
+              case 'label':
+                return <text key={i} className="figure-label" x={X(s.at[0])} y={Y(s.at[1])}>{s.text}</text>;
+            }
+          })}
+        </svg>
+      </div>
+      {caption && <p className="visual-caption">{caption}</p>}
+    </div>
+  );
 }
 
 /** Two overlapping circles. Tap a region to see how many belong there. */

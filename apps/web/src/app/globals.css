@@ -847,6 +847,48 @@ button {
   color: #1a1408;
 }
 
+/* Geometric diagrams */
+.figure {
+  display: block;
+  margin: 0 auto;
+}
+.figure-shape {
+  fill: none;
+  stroke: var(--realm);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.figure-shade {
+  fill: color-mix(in srgb, var(--realm-deep) 30%, transparent);
+}
+.figure-erase {
+  fill: var(--bg);
+}
+.figure-dashed {
+  stroke-dasharray: 5 5;
+  stroke-width: 1.5;
+}
+.figure-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.figure-axis {
+  stroke: var(--ink-muted);
+  stroke-width: 1.5;
+}
+.figure-point {
+  fill: var(--realm);
+}
+.figure-label {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Venn diagram */
 .venn {
   display: block;

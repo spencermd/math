@@ -11,6 +11,16 @@ import { NUMBER_THEORY_LESSONS } from './number-theory.ts';
 import { PROBABILITY_LESSONS } from './probability.ts';
 import { PROPORTION_LESSONS } from './proportions.ts';
 import { STATISTICS_LESSONS } from './statistics.ts';
+import { MOTION_LINE_LESSONS } from './motion-lines.ts';
+import { POWER_LESSONS } from './powers.ts';
+import { SEQUENCE_LESSONS } from './sequences.ts';
+import { COUNTING_ADVANCED_LESSONS } from './counting-advanced.ts';
+import { FACTOR_ADVANCED_LESSONS } from './factors-advanced.ts';
+import { DIGIT_BASE_LESSONS } from './digits-bases.ts';
+import { GEOMETRY_ANGLE_LESSONS } from './geometry-angles.ts';
+import { GEOMETRY_AREA_LESSONS } from './geometry-area.ts';
+import { GEOMETRY_CIRCLE_LESSONS, GEO_PROB_LESSONS } from './geometry-circles.ts';
+import { GEOMETRY_SOLID_LESSONS } from './geometry-solids.ts';
 import type { Lesson, Problem, Rng, Rung } from './types.ts';
 
 export type * from './types.ts';
@@ -33,6 +43,17 @@ for (const lesson of [
   ...NUMBER_THEORY_LESSONS,
   ...GCD_LCM_LESSONS,
   ...DIGIT_LESSONS,
+  ...MOTION_LINE_LESSONS,
+  ...POWER_LESSONS,
+  ...SEQUENCE_LESSONS,
+  ...COUNTING_ADVANCED_LESSONS,
+  ...GEO_PROB_LESSONS,
+  ...FACTOR_ADVANCED_LESSONS,
+  ...DIGIT_BASE_LESSONS,
+  ...GEOMETRY_ANGLE_LESSONS,
+  ...GEOMETRY_AREA_LESSONS,
+  ...GEOMETRY_CIRCLE_LESSONS,
+  ...GEOMETRY_SOLID_LESSONS,
 ]) {
   LESSONS[lesson.topic] = lesson;
   for (const rung of lesson.rungs) RUNG_BY_ID[rung.id] = rung;

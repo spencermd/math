@@ -23,6 +23,9 @@ const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 export const pow = (base: number, exp: number) =>
   exp === 1 ? `${base}` : `${base}${[...String(exp)].map(d => SUPERSCRIPT[Number(d)]).join('')}`;
 
+/** sup(12) → "¹²", sup(-3) → "⁻³" */
+export const sup = (n: number) => [...String(n)].map(d => (d === '-' ? '⁻' : SUPERSCRIPT[Number(d)])).join('');
+
 /** [prime, exponent] pairs, smallest prime first. */
 export type Factorization = [number, number][];
 
@@ -66,7 +69,62 @@ export function orList(xs: (string | number)[]): string {
   return `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
 }
 
-export const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+export type Row = { label?: string; text: string };
+
+/** Lines of working, revealed one at a time. */
+export const working = (rows: Row[]): Visual => ({ kind: 'rows', rows });
+
+export const LOWEST = 'Give your answer as a fraction in lowest terms.';
+
+/** neg(-5) → "−5", with a real minus sign. */
+export const neg = (n: number) => (n < 0 ? `−${fmt(-n)}` : fmt(n));
+
+/** plus(5) → "+ 5"; plus(-5) → "− 5". For joining terms. */
+export const plus = (n: number) => (n < 0 ? `− ${fmt(-n)}` : `+ ${fmt(n)}`);
+
+/** term(3, 'x') → "3x"; term(1, 'x') → "x"; term(-1, 'x') → "−x" */
+export const term = (c: number, v: string) => (c === 1 ? v : c === -1 ? `−${v}` : `${neg(c)}${v}`);
+
+/** linear(2, -3) → "2x − 3"; linear(1, 0) → "x"; linear(0, 4) → "4" */
+export function linear(m: number, b: number, v = 'x'): string {
+  if (m === 0) return neg(b);
+  return b === 0 ? term(m, v) : `${term(m, v)} ${plus(b)}`;
+}
+
+/** Lowest terms with the sign on top: reduceSigned(6, -4) → [-3, 2] */
+export function reduceSigned(num: number, den: number): [number, number] {
+  const g = gcd(Math.abs(num), Math.abs(den)) * (den < 0 ? -1 : 1);
+  return [num / g, den / g];
+}
+
+/** sfrac(-6, 4) → "−3/2"; sfrac(6, 3) → "2" */
+export function sfrac(num: number, den: number): string {
+  const [n, d] = reduceSigned(num, den);
+  return d === 1 ? neg(n) : `${n < 0 ? '−' : ''}${Math.abs(n)}/${d}`;
+}
+
+/** Simplest radical form: root(72) → "6√2", root(49) → "7", root(7) → "√7" */
+export function root(n: number): string {
+  let out = 1;
+  for (let k = 2; k * k <= n; k++) while (n % (k * k) === 0) { out *= k; n /= k * k; }
+  return n === 1 ? `${out}` : out === 1 ? `√${n}` : `${out}√${n}`;
+}
+
+/** n choose k */
+export function choose(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  let out = 1;
+  for (let i = 1; i <= Math.min(k, n - k); i++) out = (out * (n - i + 1)) / i;
+  return Math.round(out);
+}
+
+/** Wrong answers for a multiple-choice question: shuffles `right` in among the distinct `wrong` ones. */
+export function choices(rng: Rng, right: string, wrong: string[]): { kind: 'choice'; options: string[]; correct: number } {
+  const options = shuffle(rng, [right, ...[...new Set(wrong)].filter(w => w !== right)]);
+  return { kind: 'choice', options, correct: options.indexOf(right) };
+}
+
+export const gcd =(a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 export const lcm = (a: number, b: number) => (a / gcd(a, b)) * b;
 
 /** [6, 8] → [3, 4] */

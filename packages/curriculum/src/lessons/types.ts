@@ -20,7 +20,24 @@ export type Visual =
   /** Two overlapping groups. Tap a region for its count. `outside` is the number in neither group. */
   | { kind: 'venn'; left: string; right: string; onlyLeft: number; both: number; onlyRight: number; outside?: number }
   /** Fractions drawn as shaded bars, which can be recut into pieces of one common size to compare them. */
-  | { kind: 'fraction-bars'; bars: { num: number; den: number }[] };
+  | { kind: 'fraction-bars'; bars: { num: number; den: number }[] }
+  /**
+   * A geometric diagram. Coordinates are in the figure's own units with y pointing up;
+   * `box` is [xMin, yMin, xMax, yMax]. Shapes are drawn in order, so later ones sit on top.
+   */
+  | { kind: 'figure'; box: [number, number, number, number]; shapes: Shape[]; grid?: boolean; caption?: string };
+
+export type Pt = [number, number];
+
+/** `fill`: 'shade' tints the region, 'erase' paints it with the background (a hole cut from a shaded shape). */
+export type Shape =
+  | { type: 'polygon'; points: Pt[]; fill?: 'shade' | 'erase'; dashed?: boolean }
+  | { type: 'segment'; from: Pt; to: Pt; dashed?: boolean }
+  | { type: 'circle'; center: Pt; r: number; fill?: 'shade' | 'erase'; dashed?: boolean }
+  /** A pie slice from angle `from` to `to`, in degrees counterclockwise from the positive x-axis. `arcOnly` draws just the curve. */
+  | { type: 'sector'; center: Pt; r: number; from: number; to: number; fill?: 'shade' | 'erase'; arcOnly?: boolean }
+  | { type: 'point'; at: Pt }
+  | { type: 'label'; at: Pt; text: string };
 
 /** One beat of an explanation or a worked solution. */
 export interface Step {
@@ -29,6 +46,7 @@ export interface Step {
 }
 
 export type Answer =
+  /** A whole number; it may be negative. */
   | { kind: 'number'; value: number }
   /** A fraction in lowest terms, typed as "3/8". A whole number has `den` 1 and may be typed without the "/1". */
   | { kind: 'fraction'; num: number; den: number }

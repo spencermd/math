@@ -230,7 +230,7 @@ function ProblemCard({
     if (result === 'wrong') return onNext();
     if (answer.kind === 'choice') return;
     const [top, bottom = '1', extra] = input.split('/');
-    if (top === '' || bottom === '' || extra !== undefined || Number(bottom) === 0) return;
+    if (top === '' || bottom === '' || extra !== undefined || Number(bottom) === 0 || Number.isNaN(Number(top))) return;
     const [num, den] = [Number(top), Number(bottom)];
     if (answer.kind === 'number') return submit(den === 1 && num === answer.value);
     const sameValue = num * answer.den === answer.num * den;
@@ -249,14 +249,16 @@ function ProblemCard({
         <form className="answer-row" onSubmit={onSubmit}>
           <input
             className="answer-input"
-            inputMode={answer.kind === 'fraction' ? 'text' : 'numeric'}
+            inputMode="text"
             autoComplete="off"
             autoFocus
             aria-label="Your answer"
             value={input}
             disabled={solved}
             onChange={e => {
-              setInput(e.target.value.replace(answer.kind === 'fraction' ? /[^0-9/]/g : /[^0-9]/g, ''));
+              // Digits, with an optional leading minus sign (a typed hyphen or a pasted "−").
+              const raw = e.target.value.replace(/−/g, '-').replace(answer.kind === 'fraction' ? /[^0-9/-]/g : /[^0-9-]/g, '');
+              setInput(raw.slice(0, 1) + raw.slice(1).replace(/-/g, ''));
               if (result !== null) setResult(null);
             }}
           />
