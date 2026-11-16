@@ -1,4 +1,4 @@
-import { NODES, EDGES, REALM_ORDER, getNodesForRealm } from './curriculum.ts';
+import { NODES, REALM_ORDER, REQUIRED, getNodesForRealm, type RealmId } from './curriculum.ts';
 
 export type Status = 'locked' | 'available' | 'in_progress' | 'completed' | 'mastered';
 
@@ -11,17 +11,16 @@ export interface NodeProgress {
 
 export type ProgressMap = Record<string, NodeProgress>;
 
+export function isDone(status: Status): boolean {
+  return status === 'completed' || status === 'mastered';
+}
+
 export function getStatus(id: string, nodes: ProgressMap): Status {
   return nodes[id]?.status ?? 'locked';
 }
 
 export function canUnlock(id: string, nodes: ProgressMap): boolean {
-  const reqEdges = EDGES.filter(e => e.target === id && !e.cross);
-  if (reqEdges.length === 0) return true;
-  return reqEdges.every(e => {
-    const s = getStatus(e.source, nodes);
-    return s === 'completed' || s === 'mastered';
-  });
+  return REQUIRED[id].every(req => isDone(getStatus(req, nodes)));
 }
 
 export function cascadeUnlocks(
@@ -47,29 +46,18 @@ export function cascadeUnlocks(
 }
 
 export function getRealmProgress(
-  realmId: string | number,
+  realmId: RealmId,
   nodes: ProgressMap,
 ): number {
-  const realmNodes = NODES.filter(
-    n =>
-      n.realm === realmId ||
-      (realmId === '8a' && n.realm === 'cap_a') ||
-      (realmId === '8b' && n.realm === 'cap_b'),
-  );
+  const realmNodes = getNodesForRealm(realmId);
   if (!realmNodes.length) return 0;
-  const done = realmNodes.filter(n => {
-    const s = getStatus(n.id, nodes);
-    return s === 'completed' || s === 'mastered';
-  }).length;
+  const done = realmNodes.filter(n => isDone(getStatus(n.id, nodes))).length;
   return Math.round((done / realmNodes.length) * 100);
 }
 
 export function getOverallProgress(nodes: ProgressMap): { completed: number; total: number } {
   const total = NODES.length;
-  const completed = NODES.filter(n => {
-    const s = getStatus(n.id, nodes);
-    return s === 'completed' || s === 'mastered';
-  }).length;
+  const completed = NODES.filter(n => isDone(getStatus(n.id, nodes))).length;
   return { completed, total };
 }
 
@@ -111,8 +99,8 @@ export function visibleStreak(
 export function newlyEnteredRealms(
   prev: ProgressMap,
   next: ProgressMap,
-): (string | number)[] {
-  const entered = (realmId: string | number, nodes: ProgressMap) =>
+): RealmId[] {
+  const entered = (realmId: RealmId, nodes: ProgressMap) =>
     getNodesForRealm(realmId).some(n => getStatus(n.id, nodes) !== 'locked');
   return REALM_ORDER.filter(r => !entered(r, prev) && entered(r, next));
 }

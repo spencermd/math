@@ -14,11 +14,13 @@ import '@xyflow/react/dist/style.css';
 import {
   EDGES,
   NODES,
+  NODE_BY_ID,
   getNodesForRealm,
   getRealmForNode,
   getStatus,
   isCapstone,
-  type Status,
+  isDone,
+  type RealmId,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { LAYOUT } from '@/lib/tree-layout';
@@ -27,10 +29,9 @@ import { TopicPanel } from './TopicPanel';
 import { RealmBar } from './RealmBar';
 import { TopBar } from './TopBar';
 import { RealmCeremony } from './RealmCeremony';
+import { Lesson } from './Lesson';
 
 const nodeTypes = { topic: TopicNode };
-const isDone = (s: Status) => s === 'completed' || s === 'mastered';
-const byId = new Map(NODES.map(n => [n.id, n]));
 
 export function SkillTree() {
   const [hydrated, setHydrated] = useState(false);
@@ -54,16 +55,17 @@ function TreeView() {
   const pendingCeremony = useProgress(s => s.pendingCeremony);
   const dismissCeremony = useProgress(s => s.dismissCeremony);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lessonTopic, setLessonTopic] = useState<string | null>(null);
   const { fitView, setCenter } = useReactFlow();
 
-  // Open on the learner's frontier rather than the whole tree.
+  // Open where the learner left off: the topics they're partway through, or else the next one they can
+  // start. Fitting every open topic would zoom out until nothing is readable, since they're spread wide.
   const [initialFit] = useState(() => {
     const saved = useProgress.getState().nodes;
-    const frontier = NODES.filter(n => {
-      const s = getStatus(n.id, saved);
-      return s === 'available' || s === 'in_progress';
-    });
-    return { nodes: frontier.map(n => ({ id: n.id })), padding: 0.5, maxZoom: 1.1 };
+    const current = NODES.filter(n => getStatus(n.id, saved) === 'in_progress');
+    const next = NODES.find(n => getStatus(n.id, saved) === 'available');
+    const focus = current.length ? current : next ? [next] : [];
+    return { nodes: focus.map(n => ({ id: n.id })), padding: 0.5, maxZoom: 1.1, minZoom: 0.5 };
   });
 
   const nodes = useMemo<TopicFlowNode[]>(
@@ -93,7 +95,7 @@ function TreeView() {
       EDGES.map(e => {
         const sourceDone = isDone(getStatus(e.source, progress));
         const targetDone = isDone(getStatus(e.target, progress));
-        const realm = getRealmForNode(byId.get(e.target)!);
+        const realm = getRealmForNode(NODE_BY_ID[e.target]);
         const touched = selectedId === e.source || selectedId === e.target;
         const stroke = sourceDone && targetDone ? realm.color : sourceDone ? realm.border : 'var(--line)';
         return {
@@ -124,7 +126,7 @@ function TreeView() {
 
   // Realms are spread across the whole tree, so zoom to the topics the learner can reach there.
   const jumpToRealm = useCallback(
-    (realmId: string | number) => {
+    (realmId: RealmId) => {
       const realmNodes = getNodesForRealm(realmId);
       const nodes = useProgress.getState().nodes;
       const open = realmNodes.filter(n => getStatus(n.id, nodes) !== 'locked');
@@ -164,9 +166,16 @@ function TreeView() {
       <TopBar />
       <RealmBar onJump={jumpToRealm} />
       {selectedId && (
-        <TopicPanel topicId={selectedId} onClose={() => setSelectedId(null)} onSelect={focusTopic} />
+        <TopicPanel
+          topicId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onSelect={focusTopic}
+          onPractice={setLessonTopic}
+        />
       )}
-      {pendingCeremony !== null && (
+      {lessonTopic && <Lesson topicId={lessonTopic} onClose={() => setLessonTopic(null)} />}
+      {/* A realm unlocked mid-lesson is celebrated once the learner is back at the tree. */}
+      {pendingCeremony !== null && !lessonTopic && (
         <RealmCeremony
           realmId={pendingCeremony}
           onEnter={() => {

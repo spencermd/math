@@ -15,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "MathTree",
-  description: "Grow your math skills one branch at a time, from counting to calculus.",
+  description: "Competition math, one branch at a time: from clever arithmetic to MATHCOUNTS and AMC 8.",
 };
 
 export const viewport: Viewport = {

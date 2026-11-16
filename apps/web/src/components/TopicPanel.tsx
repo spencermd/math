@@ -1,16 +1,17 @@
 import {
-  NODES,
+  LESSONS,
+  NODE_BY_ID,
   PREREQS,
   CHILDREN,
-  EDGES,
+  REQUIRED,
+  TIER_LABEL,
   getRealmForNode,
   getStatus,
-  gradeLabel,
+  isDone,
+  lessonProgress,
   type Status,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
-
-const isDone = (s: Status) => s === 'completed' || s === 'mastered';
 
 const STATUS_TEXT: Record<Status, string> = {
   locked: 'Locked',
@@ -24,19 +25,23 @@ interface Props {
   topicId: string;
   onClose: () => void;
   onSelect: (id: string) => void;
+  /** Open the topic's lesson. */
+  onPractice: (id: string) => void;
 }
 
-export function TopicPanel({ topicId, onClose, onSelect }: Props) {
+export function TopicPanel({ topicId, onClose, onSelect, onPractice }: Props) {
   const nodes = useProgress(s => s.nodes);
+  const practice = useProgress(s => s.practice);
   const setStatus = useProgress(s => s.setStatus);
 
-  const topic = NODES.find(n => n.id === topicId);
+  const topic = NODE_BY_ID[topicId];
   if (!topic) return null;
   const realm = getRealmForNode(topic);
   const status = getStatus(topic.id, nodes);
   // Cross-path links are suggestions, not requirements.
-  const required = new Set(EDGES.filter(e => e.target === topic.id && !e.cross).map(e => e.source));
-  const missing = PREREQS[topic.id].filter(id => required.has(id) && !isDone(getStatus(id, nodes)));
+  const hasLesson = topic.id in LESSONS;
+  const climbed = lessonProgress(topic.id, practice);
+  const missing = REQUIRED[topic.id].filter(id => !isDone(getStatus(id, nodes)));
 
   return (
     <aside className="panel" style={{ ['--realm' as string]: realm.border }} aria-label={topic.label}>
@@ -48,26 +53,45 @@ export function TopicPanel({ topicId, onClose, onSelect }: Props) {
       <h2 className="panel-title">{topic.label}</h2>
       <div className="panel-badges">
         <span className="panel-status" data-status={status}>{STATUS_TEXT[status]}</span>
-        <span className="panel-grade">{gradeLabel(realm)}</span>
+        <span className="panel-grade">{TIER_LABEL[topic.tier]}</span>
       </div>
       <p className="panel-desc">{topic.d}</p>
 
       <div className="panel-actions">
         {status === 'locked' && <p className="panel-hint">Finish the topics below to unlock this one.</p>}
         {status === 'available' && (
-          <button className="btn-primary" onClick={() => setStatus(topic.id, 'in_progress')}>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setStatus(topic.id, 'in_progress');
+              if (hasLesson) onPractice(topic.id);
+            }}
+          >
             Start learning
           </button>
         )}
-        {status === 'in_progress' && (
+        {status === 'in_progress' && hasLesson && (
+          <>
+            <button className="btn-primary" onClick={() => onPractice(topic.id)}>
+              Keep practicing
+            </button>
+            <p className="panel-hint">{climbed}% of the way there. Finish every step to complete this topic.</p>
+          </>
+        )}
+        {status === 'in_progress' && !hasLesson && (
           <>
             <button className="btn-primary" onClick={() => setStatus(topic.id, 'completed')}>
               I&apos;ve got it!
             </button>
-            <p className="panel-hint">Practice checks will replace this button soon.</p>
+            <p className="panel-hint">Problems for this topic aren&apos;t written yet, so mark it yourself for now.</p>
           </>
         )}
         {isDone(status) && <p className="panel-hint">Nice work. Its next topics are now open.</p>}
+        {isDone(status) && hasLesson && (
+          <button className="btn-ghost panel-again" onClick={() => onPractice(topic.id)}>
+            Practice again
+          </button>
+        )}
       </div>
 
       <TopicList
@@ -88,7 +112,7 @@ function TopicList({ title, ids, onSelect }: { title: string; ids: string[]; onS
       <h3>{title}</h3>
       <ul>
         {ids.map(id => {
-          const t = NODES.find(n => n.id === id)!;
+          const t = NODE_BY_ID[id];
           const s = getStatus(id, nodes);
           return (
             <li key={id}>
