@@ -13,14 +13,18 @@ import {
 import '@xyflow/react/dist/style.css';
 import {
   EDGES,
+  LESSONS,
   NODES,
   NODE_BY_ID,
   getNodesForRealm,
   getRealmForNode,
   getStatus,
   isCapstone,
+  buildReviewSession,
   isDone,
+  nextPlacementTopic,
   type RealmId,
+  type ReviewItem,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { LAYOUT } from '@/lib/tree-layout';
@@ -30,8 +34,23 @@ import { RealmBar } from './RealmBar';
 import { TopBar } from './TopBar';
 import { RealmCeremony } from './RealmCeremony';
 import { Lesson } from './Lesson';
+import { Review } from './Review';
+import { ReviewButton } from './ReviewButton';
+import { Challenge, type ChallengeItem } from './Challenge';
+import { Placement, type PlacementItem } from './Placement';
+import { Welcome } from './Welcome';
 
 const nodeTypes = { topic: TopicNode };
+
+/** The full-screen activity in front of the tree, if any. */
+type Activity =
+  | { kind: 'lesson'; topicId: string }
+  | { kind: 'review'; items: ReviewItem[] }
+  | { kind: 'challenge'; topicId: string; items: ChallengeItem[] }
+  | { kind: 'placement'; first: PlacementItem };
+
+// Only called from event handlers, so rendering stays pure.
+const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 
 export function SkillTree() {
   const [hydrated, setHydrated] = useState(false);
@@ -55,8 +74,15 @@ function TreeView() {
   const pendingCeremony = useProgress(s => s.pendingCeremony);
   const dismissCeremony = useProgress(s => s.dismissCeremony);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [lessonTopic, setLessonTopic] = useState<string | null>(null);
+  const [activity, setActivity] = useState<Activity | null>(null);
   const { fitView, setCenter } = useReactFlow();
+  const setStatus = useProgress(s => s.setStatus);
+  const setWelcomed = useProgress(s => s.setWelcomed);
+  // Greet a learner who hasn't begun. Anyone with saved progress has plainly found their way in.
+  const showWelcome = useProgress(
+    s => !s.welcomed && !Object.values(s.nodes).some(n => n.status !== 'locked' && n.status !== 'available'),
+  );
+  const firstTopic = NODES.find(n => getStatus(n.id, progress) === 'available');
 
   // Open where the learner left off: the topics they're partway through, or else the next one they can
   // start. Fitting every open topic would zoom out until nothing is readable, since they're spread wide.
@@ -141,6 +167,41 @@ function TreeView() {
     [fitView],
   );
 
+  const openLesson = useCallback((topicId: string) => setActivity({ kind: 'lesson', topicId }), []);
+
+  const startLearning = (topicId: string) => {
+    if (getStatus(topicId, useProgress.getState().nodes) === 'available') setStatus(topicId, 'in_progress');
+    openLesson(topicId);
+  };
+
+  const startReview = () => {
+    const { reviews, nodes } = useProgress.getState();
+    const items = buildReviewSession(reviews, nodes, Math.random);
+    if (items.length) setActivity({ kind: 'review', items });
+  };
+
+  const startChallenge = (topicId: string) =>
+    setActivity({
+      kind: 'challenge',
+      topicId,
+      items: LESSONS[topicId].rungs.map(r => ({ rungId: r.id, seed: newSeed() })),
+    });
+
+  const startPlacement = () => {
+    const topicId = nextPlacementTopic(useProgress.getState().nodes, []);
+    if (topicId) setActivity({ kind: 'placement', first: { topicId, seed: newSeed() } });
+  };
+
+  // Back from the placement quiz, show everything it opened rather than a ceremony for each realm.
+  const finishPlacement = () => {
+    setActivity(null);
+    setSelectedId(null);
+    dismissCeremony();
+    const nodes = useProgress.getState().nodes;
+    const open = NODES.filter(n => getStatus(n.id, nodes) === 'available');
+    fitView({ nodes: open.map(n => ({ id: n.id })), padding: 0.3, maxZoom: 1.1, duration: 700 });
+  };
+
   return (
     <div className="tree-shell">
       <ReactFlow
@@ -170,12 +231,40 @@ function TreeView() {
           topicId={selectedId}
           onClose={() => setSelectedId(null)}
           onSelect={focusTopic}
-          onPractice={setLessonTopic}
+          onPractice={openLesson}
+          onChallenge={startChallenge}
         />
       )}
-      {lessonTopic && <Lesson topicId={lessonTopic} onClose={() => setLessonTopic(null)} />}
+      {!selectedId && <ReviewButton onStart={startReview} />}
+      {activity?.kind === 'lesson' && <Lesson topicId={activity.topicId} onClose={() => setActivity(null)} />}
+      {activity?.kind === 'review' && <Review items={activity.items} onClose={() => setActivity(null)} />}
+      {activity?.kind === 'challenge' && (
+        <Challenge
+          topicId={activity.topicId}
+          items={activity.items}
+          onClose={() => setActivity(null)}
+          onLearn={startLearning}
+        />
+      )}
+      {activity?.kind === 'placement' && (
+        <Placement first={activity.first} newSeed={newSeed} onClose={finishPlacement} />
+      )}
+      {showWelcome && !activity && firstTopic && (
+        <Welcome
+          firstTopic={firstTopic.label}
+          onStart={() => {
+            setWelcomed();
+            startLearning(firstTopic.id);
+          }}
+          onPlacement={() => {
+            setWelcomed();
+            startPlacement();
+          }}
+          onBrowse={setWelcomed}
+        />
+      )}
       {/* A realm unlocked mid-lesson is celebrated once the learner is back at the tree. */}
-      {pendingCeremony !== null && !lessonTopic && (
+      {pendingCeremony !== null && !activity && (
         <RealmCeremony
           realmId={pendingCeremony}
           onEnter={() => {

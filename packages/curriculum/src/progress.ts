@@ -67,7 +67,7 @@ export function localToday(now = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-function daysBetween(from: string, to: string): number {
+export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
 }
 

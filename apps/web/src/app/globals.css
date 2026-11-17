@@ -1052,6 +1052,175 @@ button {
   margin-top: 16px;
 }
 
+/* ── Sessions: review, challenge, placement ───────── */
+.session-stage {
+  flex: 1;
+  min-height: 0;
+}
+.session-stage > * + * {
+  margin-top: 16px;
+}
+.session-progress,
+.session-note {
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.session-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.session-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--realm);
+  transition: width 300ms ease;
+}
+.session-note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.reveal {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.reveal strong {
+  color: var(--ink);
+}
+.summary-list {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.summary-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+.summary-topic {
+  flex: 1;
+  min-width: 0;
+}
+.summary-note {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #ff9d9d;
+}
+.summary-list li[data-ok] .summary-note {
+  color: var(--gold);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+.chips li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.panel-skip {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.panel-skip .btn-ghost {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.review-button {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(22, 22, 38, 0.94);
+  backdrop-filter: blur(14px);
+  font-size: 14px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  transition: filter 120ms ease, background 120ms ease;
+}
+.review-button strong {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.review-button:hover {
+  background: var(--surface-raised);
+}
+.review-button[data-due] {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: #3d2f0a;
+  box-shadow: 0 0 28px #d4a01755;
+}
+.review-button[data-due] strong {
+  color: #1a1408;
+}
+.review-button[data-due]:hover {
+  filter: brightness(1.08);
+}
+
+/* ── Welcome ──────────────────────────────────────── */
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.welcome-brand {
+  margin-top: 0;
+  font-size: 36px;
+}
+.welcome-text {
+  margin-bottom: 10px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #d4d4e4;
+}
+.welcome-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+.welcome-option strong {
+  font-size: 15px;
+  color: var(--ink);
+}
+.welcome-option:hover {
+  border-color: var(--gold);
+  background: var(--surface-raised);
+}
+
 /* ── Small screens ────────────────────────────────── */
 @media (max-width: 640px) {
   .lesson-head { padding: 12px 16px; }

@@ -5,6 +5,7 @@ import {
   CHILDREN,
   REQUIRED,
   TIER_LABEL,
+  daysUntilDue,
   getRealmForNode,
   getStatus,
   isDone,
@@ -27,9 +28,12 @@ interface Props {
   onSelect: (id: string) => void;
   /** Open the topic's lesson. */
   onPractice: (id: string) => void;
+  /** Try to skip the topic by solving a problem from each of its steps. */
+  onChallenge: (id: string) => void;
 }
 
-export function TopicPanel({ topicId, onClose, onSelect, onPractice }: Props) {
+export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge }: Props) {
+  const reviews = useProgress(s => s.reviews);
   const nodes = useProgress(s => s.nodes);
   const practice = useProgress(s => s.practice);
   const setStatus = useProgress(s => s.setStatus);
@@ -86,7 +90,23 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice }: Props) {
             <p className="panel-hint">Problems for this topic aren&apos;t written yet, so mark it yourself for now.</p>
           </>
         )}
+        {(status === 'available' || status === 'in_progress') && hasLesson && climbed < 100 && (
+          <div className="panel-skip">
+            <button className="btn-ghost" onClick={() => onChallenge(topic.id)}>
+              Know this already? Prove it
+            </button>
+            <p className="panel-hint">
+              Solve one problem from each step on your first try, with no hints, and the topic is done.
+            </p>
+          </div>
+        )}
         {isDone(status) && <p className="panel-hint">Nice work. Its next topics are now open.</p>}
+        {isDone(status) && hasLesson && (
+          <p className="panel-hint">
+            {reviewNote(daysUntilDue(reviews[topic.id]))}
+            {status === 'completed' && ' Get it right in two reviews to master it.'}
+          </p>
+        )}
         {isDone(status) && hasLesson && (
           <button className="btn-ghost panel-again" onClick={() => onPractice(topic.id)}>
             Practice again
@@ -102,6 +122,11 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice }: Props) {
       <TopicList title="Unlocks" ids={CHILDREN[topic.id]} onSelect={onSelect} />
     </aside>
   );
+}
+
+function reviewNote(days: number): string {
+  if (days <= 0) return 'Due for review now.';
+  return `Comes back in review ${days === 1 ? 'tomorrow' : `in ${days} days`}.`;
 }
 
 function TopicList({ title, ids, onSelect }: { title: string; ids: string[]; onSelect: (id: string) => void }) {

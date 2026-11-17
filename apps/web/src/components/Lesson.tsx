@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import {
   LESSONS,
   NODE_BY_ID,
@@ -6,13 +6,11 @@ import {
   RUNG_GOAL,
   getRealmForNode,
   isRungCleared,
-  makeProblem,
   topicOfRung,
-  type Rung,
   type Step,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
-import { VisualView } from './Visual';
+import { ProblemCard, StepView } from './ProblemCard';
 
 type View =
   | { mode: 'learn'; step: number }
@@ -126,9 +124,9 @@ export function Lesson({ topicId: homeTopic, onClose }: Props) {
             />
           )}
           {view.mode === 'practice' && (
-            <ProblemCard
+            <LadderProblem
               key={`${view.rungId}:${view.seed}`}
-              rung={RUNG_BY_ID[view.rungId]}
+              rungId={view.rungId}
               seed={view.seed}
               onNext={() => advance(view.rungId)}
               onStepBack={openRung}
@@ -147,15 +145,6 @@ export function Lesson({ topicId: homeTopic, onClose }: Props) {
           )}
         </main>
       </div>
-    </div>
-  );
-}
-
-function StepView({ step }: { step: Step }) {
-  return (
-    <div className="step">
-      <p className="card-text">{step.text}</p>
-      {step.visual && <VisualView key={JSON.stringify(step.visual)} visual={step.visual} />}
     </div>
   );
 }
@@ -188,145 +177,35 @@ function Explanation({
   );
 }
 
-function ProblemCard({
-  rung,
+/** A problem on the topic's ladder: first-try answers earn the step's points, and it can be retried freely. */
+function LadderProblem({
+  rungId,
   seed,
   onNext,
   onStepBack,
 }: {
-  rung: Rung;
+  rungId: string;
   seed: number;
   onNext: () => void;
   onStepBack: (rungId: string) => void;
 }) {
   const recordCorrect = useProgress(s => s.recordCorrect);
-  const count = useProgress(s => s.practice[rung.id] ?? 0);
-  const problem = makeProblem(rung.id, seed);
-  const { answer } = problem;
-
-  const [input, setInput] = useState('');
-  const [result, setResult] = useState<'correct' | 'wrong' | 'unreduced' | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [earned, setEarned] = useState(false);
-  const [hints, setHints] = useState(0);
-  const [shown, setShown] = useState(0); // solution steps revealed
-
-  const solved = result === 'correct';
-  const builtOn = rung.buildsOn ? RUNG_BY_ID[rung.buildsOn] : undefined;
-
-  const submit = (right: boolean) => {
-    // Credit only counts when it's solved unaided on the first try.
-    if (right && attempts === 0 && shown === 0) {
-      recordCorrect(rung.id);
-      setEarned(true);
-    }
-    setResult(right ? 'correct' : 'wrong');
-    setAttempts(a => a + 1);
-  };
-
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    // Enter again on an answer already marked wrong moves on to a fresh problem.
-    if (result === 'wrong') return onNext();
-    if (answer.kind === 'choice') return;
-    const [top, bottom = '1', extra] = input.split('/');
-    if (top === '' || bottom === '' || extra !== undefined || Number(bottom) === 0 || Number.isNaN(Number(top))) return;
-    const [num, den] = [Number(top), Number(bottom)];
-    if (answer.kind === 'number') return submit(den === 1 && num === answer.value);
-    const sameValue = num * answer.den === answer.num * den;
-    // The right value in the wrong form gets a nudge, not a miss.
-    if (sameValue && den !== answer.den) return setResult('unreduced');
-    submit(sameValue);
-  };
-
+  const count = useProgress(s => s.practice[rungId] ?? 0);
   return (
-    <div className="card">
-      <p className="card-kicker">{rung.idea}</p>
-      <h3 className="prompt">{problem.prompt}</h3>
-      {problem.visual && <VisualView visual={problem.visual} />}
-
-      {answer.kind !== 'choice' ? (
-        <form className="answer-row" onSubmit={onSubmit}>
-          <input
-            className="answer-input"
-            inputMode="text"
-            autoComplete="off"
-            autoFocus
-            aria-label="Your answer"
-            value={input}
-            disabled={solved}
-            onChange={e => {
-              // Digits, with an optional leading minus sign (a typed hyphen or a pasted "−").
-              const raw = e.target.value.replace(/−/g, '-').replace(answer.kind === 'fraction' ? /[^0-9/-]/g : /[^0-9-]/g, '');
-              setInput(raw.slice(0, 1) + raw.slice(1).replace(/-/g, ''));
-              if (result !== null) setResult(null);
-            }}
-          />
-          {!solved && <button className="btn-primary" type="submit">{result === 'wrong' ? 'New problem' : 'Check'}</button>}
-        </form>
-      ) : (
-        <div className="choices">
-          {answer.options.map((option, i) => (
-            <button key={option} className="choice" disabled={solved} data-right={(solved && i === answer.correct) || undefined} onClick={() => submit(i === answer.correct)}>
-              {option}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div aria-live="polite">
-        {result === 'wrong' && (
-          <p className="feedback" data-kind="wrong">
-            {answer.kind === 'choice'
-              ? 'Not quite. Have another look, or use a hint.'
-              : 'Not quite. Change your answer to try again, or press Enter for a new problem.'}
-          </p>
-        )}
-        {result === 'unreduced' && <p className="feedback" data-kind="wrong">That&apos;s the right value. Now write it in lowest terms.</p>}
-        {solved && (
-          <p className="feedback" data-kind="right">
-            {earned
-              ? count >= RUNG_GOAL
-                ? 'Correct! You\'ve cleared this step.'
-                : `Correct! ${count} of ${RUNG_GOAL} on this step.`
-              : 'That\'s it. Solve a fresh one on your first try to earn the point.'}
-          </p>
-        )}
-      </div>
-
-      {problem.hints.slice(0, hints).map((hint, i) => (
-        <p className="hint" key={i}><strong>Hint.</strong> {hint}</p>
-      ))}
-
-      {shown > 0 && (
-        <section className="solution">
-          <h4>How to solve it</h4>
-          {problem.solution.slice(0, shown).map((step, i) => (
-            <StepView key={i} step={step} />
-          ))}
-          {shown < problem.solution.length && (
-            <button className="btn-ghost" onClick={() => setShown(s => s + 1)}>Next step</button>
-          )}
-        </section>
-      )}
-
-      <div className="card-actions">
-        {(solved || shown >= problem.solution.length) && (
-          // Focused as soon as the answer is right, so Enter carries straight on to the next problem.
-          <button key={solved ? 'next' : 'again'} className="btn-primary" autoFocus={solved} onClick={onNext}>{solved ? 'Next problem' : 'Try another like this'}</button>
-        )}
-        {!solved && hints < problem.hints.length && (
-          <button className="btn-ghost" onClick={() => setHints(h => h + 1)}>{hints ? 'Another hint' : 'Hint'}</button>
-        )}
-        {shown === 0 && (
-          <button className="btn-ghost" onClick={() => setShown(1)}>{solved ? 'See how it\'s solved' : 'Show me how'}</button>
-        )}
-        {builtOn && attempts > 0 && !solved && (
-          <button className="btn-ghost" onClick={() => onStepBack(builtOn.id)}>
-            Step back: {builtOn.idea}
-          </button>
-        )}
-      </div>
-    </div>
+    <ProblemCard
+      rungId={rungId}
+      seed={seed}
+      kicker={RUNG_BY_ID[rungId].idea}
+      onOutcome={firstTry => firstTry && recordCorrect(rungId)}
+      rightText={earned =>
+        earned
+          ? count >= RUNG_GOAL
+            ? 'Correct! You\'ve cleared this step.'
+            : `Correct! ${count} of ${RUNG_GOAL} on this step.`
+          : 'That\'s it. Solve a fresh one on your first try to earn the point.'
+      }
+      onNext={onNext}
+      onStepBack={onStepBack}
+    />
   );
 }
