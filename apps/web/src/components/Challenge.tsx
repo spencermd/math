@@ -50,11 +50,12 @@ export function Challenge({ topicId, items, onClose, onLearn }: Props) {
             key={index}
             rungId={item.rungId}
             seed={item.seed}
+            mode="challenge"
             oneShot
             kicker={`Problem ${index + 1} of ${items.length} · no hints`}
             onOutcome={firstTry => {
               if (!firstTry) setMissed(item.rungId);
-              else if (last) setStatus(topicId, 'completed');
+              else if (last) setStatus(topicId, 'completed', true);
             }}
             rightText={() => (last ? 'Correct! That\'s all of them.' : 'Correct!')}
             nextLabel={missed ? 'Continue' : last ? 'Finish' : 'Next problem'}
@@ -66,8 +67,8 @@ export function Challenge({ topicId, items, onClose, onLearn }: Props) {
           <p className="card-kicker">Topic complete</p>
           <h3>You already had {topic.label}.</h3>
           <p className="card-text">
-            The topics that build on it are now open on your tree. It will come up in review in a couple of
-            days, to make sure.
+            It&apos;s marked complete on your tree, and it will come up in review in a couple of days to make
+            sure.
           </p>
           <div className="card-actions">
             <button className="btn-primary" autoFocus onClick={onClose}>Back to the tree</button>

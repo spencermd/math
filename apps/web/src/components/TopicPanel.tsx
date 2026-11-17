@@ -3,7 +3,6 @@ import {
   NODE_BY_ID,
   PREREQS,
   CHILDREN,
-  REQUIRED,
   TIER_LABEL,
   daysUntilDue,
   getRealmForNode,
@@ -15,8 +14,7 @@ import {
 import { useProgress } from '@/lib/progress-store';
 
 const STATUS_TEXT: Record<Status, string> = {
-  locked: 'Locked',
-  available: 'Ready to start',
+  available: 'Not started',
   in_progress: 'Learning',
   completed: 'Completed',
   mastered: 'Mastered',
@@ -30,11 +28,11 @@ interface Props {
   onPractice: (id: string) => void;
   /** Try to skip the topic by solving a problem from each of its steps. */
   onChallenge: (id: string) => void;
-  /** Start a timed round on this topic alone. */
-  onSpeed: (id: string) => void;
+  /** Open the Problem Factory on this topic alone. */
+  onFactory: (id: string) => void;
 }
 
-export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge, onSpeed }: Props) {
+export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge, onFactory }: Props) {
   const reviews = useProgress(s => s.reviews);
   const nodes = useProgress(s => s.nodes);
   const practice = useProgress(s => s.practice);
@@ -44,10 +42,9 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
   if (!topic) return null;
   const realm = getRealmForNode(topic);
   const status = getStatus(topic.id, nodes);
-  // Cross-path links are suggestions, not requirements.
   const hasLesson = topic.id in LESSONS;
   const climbed = lessonProgress(topic.id, practice);
-  const missing = REQUIRED[topic.id].filter(id => !isDone(getStatus(id, nodes)));
+  const missing = PREREQS[topic.id].filter(id => !isDone(getStatus(id, nodes)));
 
   return (
     <aside className="panel" style={{ ['--realm' as string]: realm.border }} aria-label={topic.label}>
@@ -64,7 +61,6 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
       <p className="panel-desc">{topic.d}</p>
 
       <div className="panel-actions">
-        {status === 'locked' && <p className="panel-hint">Finish the topics below to unlock this one.</p>}
         {status === 'available' && (
           <button
             className="btn-primary"
@@ -102,7 +98,6 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
             </p>
           </div>
         )}
-        {isDone(status) && <p className="panel-hint">Nice work. Its next topics are now open.</p>}
         {isDone(status) && hasLesson && (
           <p className="panel-hint">
             {reviewNote(daysUntilDue(reviews[topic.id]))}
@@ -112,16 +107,22 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
         {isDone(status) && hasLesson && (
           <div className="panel-more">
             <button className="btn-ghost" onClick={() => onPractice(topic.id)}>Practice again</button>
-            <button className="btn-ghost" onClick={() => onSpeed(topic.id)}>⚡ Speed round</button>
+          </div>
+        )}
+        {hasLesson && (
+          <div className="panel-more">
+            <button className="btn-ghost" onClick={() => onFactory(topic.id)}>🏭 Problems from this topic</button>
           </div>
         )}
       </div>
 
-      <TopicList
-        title={status === 'locked' ? 'Finish first' : 'Builds on'}
-        ids={status === 'locked' ? missing : PREREQS[topic.id]}
-        onSelect={onSelect}
-      />
+      <TopicList title="Builds on" ids={PREREQS[topic.id]} onSelect={onSelect} />
+      {!isDone(status) && missing.length > 0 && (
+        <p className="panel-hint">
+          You can start here anyway. If it feels steep, {missing.length === 1 ? 'that topic is' : 'those topics are'} the
+          place to go first.
+        </p>
+      )}
       <TopicList title="Unlocks" ids={CHILDREN[topic.id]} onSelect={onSelect} />
     </aside>
   );
@@ -144,7 +145,7 @@ function TopicList({ title, ids, onSelect }: { title: string; ids: string[]; onS
           const s = getStatus(id, nodes);
           return (
             <li key={id}>
-              <button onClick={() => onSelect(id)} data-status={s}>
+              <button onClick={() => onSelect(id)}>
                 <span className="dot" style={{ background: getRealmForNode(t).color }} />
                 {t.label}
                 {isDone(s) && <span aria-label="done"> ✓</span>}

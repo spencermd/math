@@ -1,6 +1,7 @@
-import { NODES, REALM_ORDER, REQUIRED, getNodesForRealm, type RealmId } from './curriculum.ts';
+import { NODES, PREREQS, getNodesForRealm, type RealmId } from './curriculum.ts';
 
-export type Status = 'locked' | 'available' | 'in_progress' | 'completed' | 'mastered';
+/** Every topic is open from the start; `available` is one that hasn't been begun. */
+export type Status = 'available' | 'in_progress' | 'completed' | 'mastered';
 
 export interface NodeProgress {
   status: Status;
@@ -16,33 +17,12 @@ export function isDone(status: Status): boolean {
 }
 
 export function getStatus(id: string, nodes: ProgressMap): Status {
-  return nodes[id]?.status ?? 'locked';
+  return nodes[id]?.status ?? 'available';
 }
 
-export function canUnlock(id: string, nodes: ProgressMap): boolean {
-  return REQUIRED[id].every(req => isDone(getStatus(req, nodes)));
-}
-
-export function cascadeUnlocks(
-  nodes: ProgressMap,
-): { newNodes: ProgressMap; newlyUnlocked: string[] } {
-  const updated: ProgressMap = { ...nodes };
-  const newlyUnlocked: string[] = [];
-  let changed = true;
-
-  while (changed) {
-    changed = false;
-    for (const n of NODES) {
-      const st = getStatus(n.id, updated);
-      if (st === 'locked' && canUnlock(n.id, updated)) {
-        updated[n.id] = { status: 'available', progress: 0, notes: '' };
-        newlyUnlocked.push(n.id);
-        changed = true;
-      }
-    }
-  }
-
-  return { newNodes: updated, newlyUnlocked };
+/** A good next topic: not finished, and everything it builds on is. Nothing is locked, so this only guides. */
+export function isReady(id: string, nodes: ProgressMap): boolean {
+  return !isDone(getStatus(id, nodes)) && PREREQS[id].every(req => isDone(getStatus(req, nodes)));
 }
 
 export function getRealmProgress(
@@ -93,14 +73,4 @@ export function visibleStreak(
 ): number {
   if (!lastActiveDate) return 0;
   return daysBetween(lastActiveDate, today) <= 1 ? streak : 0;
-}
-
-/** Realms that had no unlocked topics in `prev` but have at least one in `next`. */
-export function newlyEnteredRealms(
-  prev: ProgressMap,
-  next: ProgressMap,
-): RealmId[] {
-  const entered = (realmId: RealmId, nodes: ProgressMap) =>
-    getNodesForRealm(realmId).some(n => getStatus(n.id, nodes) !== 'locked');
-  return REALM_ORDER.filter(r => !entered(r, prev) && entered(r, next));
 }

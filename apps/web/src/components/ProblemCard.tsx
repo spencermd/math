@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   RUNG_BY_ID,
   answerText,
@@ -7,8 +7,10 @@ import {
   diagnose,
   makeProblem,
   parseTyped,
+  type AnswerMode,
   type Step,
 } from '@mathtree/curriculum';
+import { useProgress } from '@/lib/progress-store';
 import { VisualView } from './Visual';
 
 export function StepView({ step }: { step: Step }) {
@@ -23,6 +25,8 @@ export function StepView({ step }: { step: Step }) {
 interface Props {
   rungId: string;
   seed: number;
+  /** Where the problem is being worked on, for the record of answers. */
+  mode: AnswerMode;
   /** Small label above the prompt. */
   kicker: string;
   /**
@@ -45,6 +49,7 @@ interface Props {
 export function ProblemCard({
   rungId,
   seed,
+  mode,
   kicker,
   oneShot = false,
   onOutcome,
@@ -68,6 +73,11 @@ export function ProblemCard({
   const [note, setNote] = useState<string | null>(null);
   const [nudged, setNudged] = useState(false);
 
+  const shownAt = useRef(0);
+  useEffect(() => {
+    shownAt.current = Date.now();
+  }, []);
+
   const solved = result === 'correct';
   // The outcome is settled by the first answer, or by asking to see the solution.
   const settled = attempts > 0 || shown > 0;
@@ -79,6 +89,15 @@ export function ProblemCard({
       onOutcome(right);
       setEarned(right);
     }
+    useProgress.getState().recordAnswer({
+      rungId,
+      right,
+      attempt: attempts + 1,
+      aided: shown > 0,
+      mode,
+      answer,
+      shownAt: shownAt.current,
+    });
     setResult(right ? 'correct' : 'wrong');
     setAttempts(a => a + 1);
     setNote(why);

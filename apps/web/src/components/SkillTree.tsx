@@ -13,20 +13,22 @@ import {
 import '@xyflow/react/dist/style.css';
 import {
   EDGES,
+  EVERYTHING,
   LESSONS,
   NODES,
   NODE_BY_ID,
+  buildReviewSession,
+  dueTopics,
   getNodesForRealm,
   getRealmForNode,
   getStatus,
   isCapstone,
-  buildReviewSession,
   isDone,
+  isReady,
   isRungCleared,
-  nextPlacementTopic,
+  type FactoryScope,
   type RealmId,
   type ReviewItem,
-  type SpeedScope,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { LAYOUT } from '@/lib/tree-layout';
@@ -34,13 +36,11 @@ import TopicNode, { type TopicFlowNode } from './TopicNode';
 import { TopicPanel } from './TopicPanel';
 import { RealmBar } from './RealmBar';
 import { TopBar } from './TopBar';
-import { RealmCeremony } from './RealmCeremony';
 import { Lesson } from './Lesson';
 import { Review } from './Review';
-import { TodayBar } from './TodayBar';
-import { Speed } from './Speed';
+import { Factory } from './Factory';
 import { Challenge, type ChallengeItem } from './Challenge';
-import { Placement, type PlacementItem } from './Placement';
+import { BadgeGallery, BadgeToast } from './Badges';
 import { Welcome } from './Welcome';
 
 const nodeTypes = { topic: TopicNode };
@@ -48,10 +48,10 @@ const nodeTypes = { topic: TopicNode };
 /** The full-screen activity in front of the tree, if any. */
 type Activity =
   | { kind: 'lesson'; topicId: string; resume?: { rungId: string; seed: number } }
-  | { kind: 'speed'; scope: SpeedScope }
+  | { kind: 'factory'; scope: FactoryScope }
   | { kind: 'review'; items: ReviewItem[] }
   | { kind: 'challenge'; topicId: string; items: ChallengeItem[] }
-  | { kind: 'placement'; first: PlacementItem };
+  | { kind: 'badges' };
 
 // Only called from event handlers, so rendering stays pure.
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
@@ -60,7 +60,10 @@ export function SkillTree() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    Promise.resolve(useProgress.persist.rehydrate()).then(() => setHydrated(true));
+    Promise.resolve(useProgress.persist.rehydrate()).then(() => {
+      useProgress.getState().checkBadges();
+      setHydrated(true);
+    });
   }, []);
 
   if (!hydrated) {
@@ -75,25 +78,22 @@ export function SkillTree() {
 
 function TreeView() {
   const progress = useProgress(s => s.nodes);
-  const pendingCeremony = useProgress(s => s.pendingCeremony);
-  const dismissCeremony = useProgress(s => s.dismissCeremony);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activity, setActivity] = useState<Activity | null>(null);
   const { fitView, setCenter } = useReactFlow();
   const setStatus = useProgress(s => s.setStatus);
   const setWelcomed = useProgress(s => s.setWelcomed);
   // Greet a learner who hasn't begun. Anyone with saved progress has plainly found their way in.
-  const showWelcome = useProgress(
-    s => !s.welcomed && !Object.values(s.nodes).some(n => n.status !== 'locked' && n.status !== 'available'),
-  );
-  const firstTopic = NODES.find(n => getStatus(n.id, progress) === 'available');
+  const showWelcome = useProgress(s => !s.welcomed && Object.values(s.nodes).every(n => n.status === 'available'));
+  const due = useProgress(s => dueTopics(s.reviews, s.nodes).length);
+  const firstTopic = NODES[0];
 
-  // Open where the learner left off: the topics they're partway through, or else the next one they can
-  // start. Fitting every open topic would zoom out until nothing is readable, since they're spread wide.
+  // Open where the learner left off: the topics they're partway through, or else a good one to do next.
+  // Fitting the whole tree would zoom out until nothing is readable.
   const [initialFit] = useState(() => {
     const saved = useProgress.getState().nodes;
     const current = NODES.filter(n => getStatus(n.id, saved) === 'in_progress');
-    const next = NODES.find(n => getStatus(n.id, saved) === 'available');
+    const next = NODES.find(n => isReady(n.id, saved));
     const focus = current.length ? current : next ? [next] : [];
     return { nodes: focus.map(n => ({ id: n.id })), padding: 0.5, maxZoom: 1.1, minZoom: 0.5 };
   });
@@ -114,6 +114,7 @@ function TreeView() {
             status: getStatus(topic.id, progress),
             realm: getRealmForNode(topic),
             capstone: isCapstone(topic),
+            ready: isReady(topic.id, progress),
           },
         };
       }),
@@ -154,15 +155,11 @@ function TreeView() {
     [setCenter],
   );
 
-  // Realms are spread across the whole tree, so zoom to the topics the learner can reach there.
   const jumpToRealm = useCallback(
     (realmId: RealmId) => {
-      const realmNodes = getNodesForRealm(realmId);
-      const nodes = useProgress.getState().nodes;
-      const open = realmNodes.filter(n => getStatus(n.id, nodes) !== 'locked');
       setSelectedId(null);
       fitView({
-        nodes: (open.length ? open : realmNodes).map(n => ({ id: n.id })),
+        nodes: getNodesForRealm(realmId).map(n => ({ id: n.id })),
         padding: 0.3,
         maxZoom: 1.1,
         duration: 700,
@@ -170,8 +167,6 @@ function TreeView() {
     },
     [fitView],
   );
-
-  const openLesson = useCallback((topicId: string) => setActivity({ kind: 'lesson', topicId }), []);
 
   // Begin a topic, or carry on from the first step not yet cleared if the learner has already been practicing.
   const startLearning = (topicId: string) => {
@@ -200,19 +195,12 @@ function TreeView() {
       items: LESSONS[topicId].rungs.map(r => ({ rungId: r.id, seed: newSeed() })),
     });
 
-  const startPlacement = () => {
-    const topicId = nextPlacementTopic(useProgress.getState().nodes, []);
-    if (topicId) setActivity({ kind: 'placement', first: { topicId, seed: newSeed() } });
-  };
+  const openFactory = (scope: FactoryScope = EVERYTHING) => setActivity({ kind: 'factory', scope });
 
-  // Back from the placement quiz, show everything it opened rather than a ceremony for each realm.
-  const finishPlacement = () => {
+  // From a problem straight to its topic on the tree, with the topic's panel open.
+  const study = (topicId: string) => {
     setActivity(null);
-    setSelectedId(null);
-    dismissCeremony();
-    const nodes = useProgress.getState().nodes;
-    const open = NODES.filter(n => getStatus(n.id, nodes) === 'available');
-    fitView({ nodes: open.map(n => ({ id: n.id })), padding: 0.3, maxZoom: 1.1, duration: 700 });
+    focusTopic(topicId);
   };
 
   return (
@@ -237,38 +225,36 @@ function TreeView() {
         <Controls showInteractive={false} position="bottom-left" />
       </ReactFlow>
 
-      <TopBar />
+      <TopBar onBadges={() => setActivity({ kind: 'badges' })} />
       <RealmBar onJump={jumpToRealm} />
       {selectedId && (
         <TopicPanel
           topicId={selectedId}
           onClose={() => setSelectedId(null)}
           onSelect={focusTopic}
-          onPractice={openLesson}
+          onPractice={startLearning}
           onChallenge={startChallenge}
-          onSpeed={topicId => setActivity({ kind: 'speed', scope: { kind: 'topic', topicId } })}
+          onFactory={topicId => openFactory({ realm: null, tier: null, topicId })}
         />
       )}
       {!selectedId && (
-        <TodayBar
-          onReview={startReview}
-          onLearn={startLearning}
-          onSpeed={() => setActivity({ kind: 'speed', scope: { kind: 'all' } })}
-        />
+        <button className="factory-button" onClick={() => openFactory()}>
+          <strong>🏭 Problem Factory</strong>
+          <span>{due > 0 ? `Contest problems · ${due} to review` : 'Try some contest problems'}</span>
+        </button>
       )}
       {activity?.kind === 'lesson' && (
         <Lesson
-          // A fresh lesson when today's plan moves from one straight into another.
           key={activity.topicId}
           topicId={activity.topicId}
           resume={activity.resume}
           onClose={() => setActivity(null)}
         />
       )}
-      {activity?.kind === 'review' && (
-        <Review items={activity.items} onClose={() => setActivity(null)} onLearn={startLearning} />
+      {activity?.kind === 'factory' && (
+        <Factory scope={activity.scope} onClose={() => setActivity(null)} onStudy={study} onReview={startReview} />
       )}
-      {activity?.kind === 'speed' && <Speed scope={activity.scope} onClose={() => setActivity(null)} />}
+      {activity?.kind === 'review' && <Review items={activity.items} onClose={() => setActivity(null)} onStudy={study} />}
       {activity?.kind === 'challenge' && (
         <Challenge
           topicId={activity.topicId}
@@ -277,33 +263,22 @@ function TreeView() {
           onLearn={startLearning}
         />
       )}
-      {activity?.kind === 'placement' && (
-        <Placement first={activity.first} newSeed={newSeed} onClose={finishPlacement} />
-      )}
-      {showWelcome && !activity && firstTopic && (
+      {activity?.kind === 'badges' && <BadgeGallery onClose={() => setActivity(null)} />}
+      {showWelcome && !activity && (
         <Welcome
           firstTopic={firstTopic.label}
           onStart={() => {
             setWelcomed();
             startLearning(firstTopic.id);
           }}
-          onPlacement={() => {
+          onFactory={() => {
             setWelcomed();
-            startPlacement();
+            openFactory();
           }}
           onBrowse={setWelcomed}
         />
       )}
-      {/* A realm unlocked mid-lesson is celebrated once the learner is back at the tree. */}
-      {pendingCeremony !== null && !activity && (
-        <RealmCeremony
-          realmId={pendingCeremony}
-          onEnter={() => {
-            dismissCeremony();
-            jumpToRealm(pendingCeremony);
-          }}
-        />
-      )}
+      <BadgeToast />
     </div>
   );
 }

@@ -7,23 +7,25 @@ export type TopicNodeData = {
   status: Status;
   realm: RealmDef;
   capstone: boolean;
+  /** A good one to do next: everything it builds on is finished. */
+  ready: boolean;
 };
 
 export type TopicFlowNode = Node<TopicNodeData, 'topic'>;
 
 const GLYPH: Partial<Record<Status, string>> = {
-  locked: '🔒',
   in_progress: '◐',
   completed: '✓',
   mastered: '★',
 };
 
-function styleFor(status: Status, realm: RealmDef) {
+function styleFor(status: Status, realm: RealmDef, ready: boolean) {
   switch (status) {
-    case 'locked':
-      return { background: realm.locked, borderColor: 'var(--line)', color: 'var(--ink-faint)', opacity: 0.45 };
     case 'available':
-      return { background: 'var(--surface)', borderColor: realm.border, color: 'var(--ink)', boxShadow: `0 0 18px ${realm.glow}` };
+      // Every topic is open. The ones worth doing next are lit; the rest wait quietly in their realm's colour.
+      return ready
+        ? { background: 'var(--surface)', borderColor: realm.border, color: 'var(--ink)', boxShadow: `0 0 18px ${realm.glow}` }
+        : { background: 'var(--surface)', borderColor: `${realm.color}99`, color: 'var(--ink-muted)' };
     case 'in_progress':
       return { background: `${realm.color}99`, borderColor: realm.border, color: 'var(--ink)', boxShadow: `0 0 22px ${realm.glow}` };
     case 'completed':
@@ -34,7 +36,7 @@ function styleFor(status: Status, realm: RealmDef) {
 }
 
 function TopicNodeView({ data, selected }: NodeProps<TopicFlowNode>) {
-  const { topic, status, realm, capstone } = data;
+  const { topic, status, realm, capstone, ready } = data;
   const glyph = GLYPH[status];
   return (
     <div
@@ -42,7 +44,7 @@ function TopicNodeView({ data, selected }: NodeProps<TopicFlowNode>) {
       data-status={status}
       data-capstone={capstone || undefined}
       data-selected={selected || undefined}
-      style={styleFor(status, realm)}
+      style={styleFor(status, realm, ready)}
       aria-label={`${topic.label}, ${status.replace('_', ' ')}`}
     >
       <Handle type="target" position={Position.Top} isConnectable={false} />
