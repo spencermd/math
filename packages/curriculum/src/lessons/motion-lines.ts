@@ -195,6 +195,9 @@ const motionWork: Lesson = {
         return {
           prompt: `${story} What is the average speed for the whole round trip, in mph?`,
           answer: { kind: 'number', value: avg },
+          mistakes: [
+            { value: (out + back) / 2, why: 'That is halfway between the two speeds. More time is spent on the slower leg, so it counts for more.' },
+          ],
           hints: [
             `It is not ${(out + back) / 2}. More TIME is spent at the slower speed.`,
             `The distance was not given, so choose one. ${d} miles each way divides nicely by both speeds.`,

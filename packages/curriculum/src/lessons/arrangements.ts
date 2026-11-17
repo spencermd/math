@@ -58,6 +58,10 @@ const handshakes: Lesson = {
         return {
           prompt: `${s.setup(n)} ${s.ask}`,
           answer: { kind: 'number', value: answer },
+          mistakes: [
+            { value: n * (n - 1), why: `That counts each ${s.each} twice, once from each end.` },
+            { value: (n * (n + 1)) / 2, why: `Nobody is paired with themselves: each ${s.who} ${s.does} ${n - 1} others, not ${n}.` },
+          ],
           hints: [
             `Each ${s.who} ${s.does} ${n - 1} others. Why is ${n} × ${n - 1} too many?`,
             `${n} × ${n - 1} counts each ${s.each} twice, once from each end.`,

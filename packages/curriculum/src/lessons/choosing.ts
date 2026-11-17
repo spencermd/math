@@ -81,6 +81,9 @@ const combinations: Lesson = {
         return {
           prompt: c.ask(n, k),
           answer: { kind: 'number', value: choose(n, k) },
+          mistakes: [
+            { value: fallingValue(n, k), why: `That counts every order of the same ${k} ${c.things} as different. Order does not matter here, so divide by ${k}!.` },
+          ],
           hints: [
             `If order mattered there would be ${falling(n, k)} ways. But does the order of the ${k} ${c.things} matter here?`,
             `Each ${c.group} has been counted ${k}! = ${fact(k)} times, once for every order of its ${c.things}.`,

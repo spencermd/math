@@ -108,6 +108,9 @@ const statistics: Lesson = {
           return {
             prompt: `The mean of ${n} numbers is ${avg}. One of the numbers is removed, and the mean of the remaining ${n - 1} numbers is ${rest}. What number was removed?`,
             answer: { kind: 'number', value: gone },
+            mistakes: [
+              { value: Math.abs(avg - rest), why: 'That is how far the mean moved. Compare the two totals instead.' },
+            ],
             hints: [
               `What did the ${n} numbers add up to? What do the remaining ${n - 1} add up to?`,
               `The total fell from ${n} × ${avg} = ${n * avg} to ${n - 1} × ${rest} = ${(n - 1) * rest}.`,
@@ -138,6 +141,9 @@ const statistics: Lesson = {
         return {
           prompt: `Two classes took the same test. The ${n1} students in one class averaged ${a1}, and the ${n2} students in the other averaged ${a2}. What was the average score of all ${n1 + n2} students?`,
           answer: { kind: 'number', value: mean },
+          mistakes: [
+            { value: (a1 + a2) / 2, why: 'That averages the two averages, which only works when the groups are the same size.' },
+          ],
           hints: [
             `It is not ${(a1 + a2) / 2}. The classes are different sizes, so the bigger class pulls the average toward its score.`,
             `Find each class's total: ${n1} × ${a1} and ${n2} × ${a2}.`,

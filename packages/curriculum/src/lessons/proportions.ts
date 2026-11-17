@@ -373,6 +373,10 @@ const percents: Lesson = {
         return {
           prompt: `The price of a ${thing} ${ch.up ? 'rose' : 'fell'} from $${before} to $${after}. By what percent did it ${ch.up ? 'increase' : 'decrease'}?`,
           answer: { kind: 'number', value: ch.p },
+          mistakes: [
+            { value: (change / after) * 100, why: `That compares the change with the new price, $${after}. A percent change is measured against where it started.` },
+            { value: change, why: `$${change} is the change in dollars. What percent of the starting price is that?` },
+          ],
           hints: [
             `The price changed by $${change}. That is a fraction of which price, the old one or the new one?`,
             `Compare the change with where it started: ${change}/${before}.`,
@@ -402,6 +406,10 @@ const percents: Lesson = {
         return {
           prompt: `A shop ${up1 ? 'raises' : 'cuts'} the price of a ${thing} by ${p}%. A month later it ${up2 ? 'raises' : 'cuts'} the new price by ${q}%. The final price is what percent of the original price?`,
           answer: { kind: 'number', value: end },
+          mistakes: [
+            { value: naive, why: `That adds the two percents together. The second ${q}% is taken from the new price, not the original one.` },
+            { value: net, why: 'That is the size of the overall change. The question asks what percent of the original price is left.' },
+          ],
           hints: [
             'No price is given, so choose one. $100 makes percents easy.',
             `After the first change a $100 ${thing} costs $${mid}. The second change is ${q}% of $${mid}, not of $100.`,
@@ -441,6 +449,9 @@ const percents: Lesson = {
             ? `After a ${ch.p}% discount, a ${thing} costs $${after}. What was its original price in dollars?`
             : `A town's population grew by ${ch.p}% this year and is now ${fmt(after)}. What was it a year ago?`,
           answer: { kind: 'number', value: before },
+          mistakes: [
+            { value: wrong, why: `That ${sale ? 'adds' : 'takes off'} ${ch.p}% of ${unit}${fmt(after)}. The ${ch.p}% was a share of the original amount, which is ${sale ? 'larger' : 'smaller'}.` },
+          ],
           hints: [
             `The ${ch.p}% was taken of the original amount, which you don't know yet. What percent of the original is ${unit}${fmt(after)}?`,
             `${unit}${fmt(after)} is ${kept}% of the original, and ${kept}% = ${frac(ch.n, ch.d)}.`,

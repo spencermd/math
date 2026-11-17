@@ -1,5 +1,14 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { RUNG_BY_ID, makeProblem, type Answer, type Step } from '@mathtree/curriculum';
+import {
+  RUNG_BY_ID,
+  answerText,
+  checkTyped,
+  cleanInput,
+  diagnose,
+  makeProblem,
+  parseTyped,
+  type Step,
+} from '@mathtree/curriculum';
 import { VisualView } from './Visual';
 
 export function StepView({ step }: { step: Step }) {
@@ -9,12 +18,6 @@ export function StepView({ step }: { step: Step }) {
       {step.visual && <VisualView key={JSON.stringify(step.visual)} visual={step.visual} />}
     </div>
   );
-}
-
-function answerText(answer: Answer): string {
-  if (answer.kind === 'number') return String(answer.value).replace('-', '−');
-  if (answer.kind === 'choice') return answer.options[answer.correct];
-  return answer.den === 1 ? `${answer.num}` : `${answer.num}/${answer.den}`.replace('-', '−');
 }
 
 interface Props {
@@ -61,6 +64,9 @@ export function ProblemCard({
   const [earned, setEarned] = useState(false);
   const [hints, setHints] = useState(0);
   const [shown, setShown] = useState(0); // solution steps revealed
+  // What the latest wrong answer suggests went wrong, and whether a hint was opened in reply to it.
+  const [note, setNote] = useState<string | null>(null);
+  const [nudged, setNudged] = useState(false);
 
   const solved = result === 'correct';
   // The outcome is settled by the first answer, or by asking to see the solution.
@@ -68,13 +74,18 @@ export function ProblemCard({
   const locked = solved || (oneShot && settled);
   const builtOn = rung.buildsOn ? RUNG_BY_ID[rung.buildsOn] : undefined;
 
-  const submit = (right: boolean) => {
+  const submit = (right: boolean, why: string | null = null) => {
     if (!settled) {
       onOutcome(right);
       setEarned(right);
     }
     setResult(right ? 'correct' : 'wrong');
     setAttempts(a => a + 1);
+    setNote(why);
+    // A miss with nothing specific to say about it gets the next hint instead, so there is always a way forward.
+    const nudge = !right && !oneShot && !why && shown === 0 && hints < problem.hints.length;
+    setNudged(nudge);
+    if (nudge) setHints(h => h + 1);
   };
 
   const showSolution = () => {
@@ -84,17 +95,14 @@ export function ProblemCard({
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Enter again on an answer already marked wrong moves on to a fresh problem.
-    if (result === 'wrong') return onNext();
-    if (answer.kind === 'choice') return;
-    const [top, bottom = '1', extra] = input.split('/');
-    if (top === '' || bottom === '' || extra !== undefined || Number(bottom) === 0 || Number.isNaN(Number(top))) return;
-    const [num, den] = [Number(top), Number(bottom)];
-    if (answer.kind === 'number') return submit(den === 1 && num === answer.value);
-    const sameValue = num * answer.den === answer.num * den;
+    // An answer already marked wrong has to change before it's checked again.
+    if (result === 'wrong' || answer.kind === 'choice') return;
+    const typed = parseTyped(input);
+    if (!typed) return;
+    const verdict = checkTyped(answer, typed);
     // The right value in the wrong form gets a nudge, not a miss.
-    if (sameValue && den !== answer.den) return setResult('unreduced');
-    submit(sameValue);
+    if (verdict === 'unreduced') return setResult('unreduced');
+    submit(verdict === 'right', verdict === 'right' ? null : diagnose(problem, typed));
   };
 
   return (
@@ -114,13 +122,11 @@ export function ProblemCard({
             value={input}
             disabled={locked}
             onChange={e => {
-              // Digits, with an optional leading minus sign (a typed hyphen or a pasted "−").
-              const raw = e.target.value.replace(/−/g, '-').replace(answer.kind === 'fraction' ? /[^0-9/-]/g : /[^0-9-]/g, '');
-              setInput(raw.slice(0, 1) + raw.slice(1).replace(/-/g, ''));
+              setInput(cleanInput(e.target.value, answer.kind === 'fraction'));
               if (result !== null) setResult(null);
             }}
           />
-          {!locked && <button className="btn-primary" type="submit">{result === 'wrong' ? 'New problem' : 'Check'}</button>}
+          {!locked && <button className="btn-primary" type="submit" disabled={result === 'wrong'}>Check</button>}
         </form>
       ) : (
         <div className="choices">
@@ -137,11 +143,14 @@ export function ProblemCard({
           <p className="feedback" data-kind="wrong">
             {oneShot
               ? `Not quite. The answer is ${answerText(answer)}.`
-              : answer.kind === 'choice'
-                ? 'Not quite. Have another look, or use a hint.'
-                : 'Not quite. Change your answer to try again, or press Enter for a new problem.'}
+              : note
+                ? `Not quite. ${note}`
+                : nudged
+                  ? `Not quite. Here's a hint. ${answer.kind === 'choice' ? 'Pick again.' : 'Change your answer to try again.'}`
+                  : `Not quite. ${answer.kind === 'choice' ? 'Pick again' : 'Change your answer to try again'}, or see how it's solved.`}
           </p>
         )}
+        {result === 'wrong' && oneShot && note && <p className="feedback-note">{note}</p>}
         {result === 'unreduced' && <p className="feedback" data-kind="wrong">That&apos;s the right value. Now write it in lowest terms.</p>}
         {oneShot && settled && attempts === 0 && (
           <p className="feedback" data-kind="wrong">The answer is {answerText(answer)}.</p>
@@ -186,6 +195,9 @@ export function ProblemCard({
           <button className="btn-ghost" onClick={() => onStepBack(builtOn.id)}>
             Step back: {builtOn.idea}
           </button>
+        )}
+        {!locked && attempts > 0 && shown < problem.solution.length && (
+          <button className="btn-ghost" onClick={onNext}>Skip this one</button>
         )}
       </div>
     </div>

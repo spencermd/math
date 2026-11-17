@@ -30,9 +30,11 @@ interface Props {
   onPractice: (id: string) => void;
   /** Try to skip the topic by solving a problem from each of its steps. */
   onChallenge: (id: string) => void;
+  /** Start a timed round on this topic alone. */
+  onSpeed: (id: string) => void;
 }
 
-export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge }: Props) {
+export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge, onSpeed }: Props) {
   const reviews = useProgress(s => s.reviews);
   const nodes = useProgress(s => s.nodes);
   const practice = useProgress(s => s.practice);
@@ -108,9 +110,10 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
           </p>
         )}
         {isDone(status) && hasLesson && (
-          <button className="btn-ghost panel-again" onClick={() => onPractice(topic.id)}>
-            Practice again
-          </button>
+          <div className="panel-more">
+            <button className="btn-ghost" onClick={() => onPractice(topic.id)}>Practice again</button>
+            <button className="btn-ghost" onClick={() => onSpeed(topic.id)}>⚡ Speed round</button>
+          </div>
         )}
       </div>
 

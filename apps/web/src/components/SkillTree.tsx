@@ -22,9 +22,11 @@ import {
   isCapstone,
   buildReviewSession,
   isDone,
+  isRungCleared,
   nextPlacementTopic,
   type RealmId,
   type ReviewItem,
+  type SpeedScope,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { LAYOUT } from '@/lib/tree-layout';
@@ -35,7 +37,8 @@ import { TopBar } from './TopBar';
 import { RealmCeremony } from './RealmCeremony';
 import { Lesson } from './Lesson';
 import { Review } from './Review';
-import { ReviewButton } from './ReviewButton';
+import { TodayBar } from './TodayBar';
+import { Speed } from './Speed';
 import { Challenge, type ChallengeItem } from './Challenge';
 import { Placement, type PlacementItem } from './Placement';
 import { Welcome } from './Welcome';
@@ -44,7 +47,8 @@ const nodeTypes = { topic: TopicNode };
 
 /** The full-screen activity in front of the tree, if any. */
 type Activity =
-  | { kind: 'lesson'; topicId: string }
+  | { kind: 'lesson'; topicId: string; resume?: { rungId: string; seed: number } }
+  | { kind: 'speed'; scope: SpeedScope }
   | { kind: 'review'; items: ReviewItem[] }
   | { kind: 'challenge'; topicId: string; items: ChallengeItem[] }
   | { kind: 'placement'; first: PlacementItem };
@@ -169,9 +173,18 @@ function TreeView() {
 
   const openLesson = useCallback((topicId: string) => setActivity({ kind: 'lesson', topicId }), []);
 
+  // Begin a topic, or carry on from the first step not yet cleared if the learner has already been practicing.
   const startLearning = (topicId: string) => {
-    if (getStatus(topicId, useProgress.getState().nodes) === 'available') setStatus(topicId, 'in_progress');
-    openLesson(topicId);
+    const { nodes, practice } = useProgress.getState();
+    if (getStatus(topicId, nodes) === 'available') setStatus(topicId, 'in_progress');
+    const rungs = LESSONS[topicId].rungs;
+    const next = rungs.find(r => !isRungCleared(r.id, practice));
+    const begun = rungs.some(r => (practice[r.id] ?? 0) > 0);
+    setActivity({
+      kind: 'lesson',
+      topicId,
+      resume: begun && next ? { rungId: next.id, seed: newSeed() } : undefined,
+    });
   };
 
   const startReview = () => {
@@ -233,11 +246,29 @@ function TreeView() {
           onSelect={focusTopic}
           onPractice={openLesson}
           onChallenge={startChallenge}
+          onSpeed={topicId => setActivity({ kind: 'speed', scope: { kind: 'topic', topicId } })}
         />
       )}
-      {!selectedId && <ReviewButton onStart={startReview} />}
-      {activity?.kind === 'lesson' && <Lesson topicId={activity.topicId} onClose={() => setActivity(null)} />}
-      {activity?.kind === 'review' && <Review items={activity.items} onClose={() => setActivity(null)} />}
+      {!selectedId && (
+        <TodayBar
+          onReview={startReview}
+          onLearn={startLearning}
+          onSpeed={() => setActivity({ kind: 'speed', scope: { kind: 'all' } })}
+        />
+      )}
+      {activity?.kind === 'lesson' && (
+        <Lesson
+          // A fresh lesson when today's plan moves from one straight into another.
+          key={activity.topicId}
+          topicId={activity.topicId}
+          resume={activity.resume}
+          onClose={() => setActivity(null)}
+        />
+      )}
+      {activity?.kind === 'review' && (
+        <Review items={activity.items} onClose={() => setActivity(null)} onLearn={startLearning} />
+      )}
+      {activity?.kind === 'speed' && <Speed scope={activity.scope} onClose={() => setActivity(null)} />}
       {activity?.kind === 'challenge' && (
         <Challenge
           topicId={activity.topicId}

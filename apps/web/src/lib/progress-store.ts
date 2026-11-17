@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   MASTERY_STAGE,
+  RUNG_GOAL,
   cascadeUnlocks,
   firstReview,
   getStatus,
@@ -12,6 +13,7 @@ import {
   newlyEnteredRealms,
   topicOfRung,
   updateStreak,
+  type DayLog,
   type PracticeMap,
   type ProgressMap,
   type RealmId,
@@ -33,6 +35,10 @@ interface ProgressState {
   reviews: ReviewMap;
   /** The first-visit welcome has been answered. */
   welcomed: boolean;
+  /** Today's activity, for the daily goal. Stale once the date has passed. */
+  day: DayLog | null;
+  /** Best speed-round score, by format and scope. */
+  bests: Record<string, number>;
 
   setStatus: (id: string, status: Status) => void;
   /** Credit a first-try correct answer. Clearing a topic's whole ladder completes the topic. */
@@ -44,10 +50,18 @@ interface ProgressState {
   recordReview: (topicId: string, firstTry: boolean, counts: boolean) => void;
   dismissCeremony: () => void;
   setWelcomed: () => void;
+  /** Keep a speed-round score if it beats the best so far. Counts as activity for the streak. */
+  recordSpeed: (key: string, score: number) => void;
   reset: () => void;
 }
 
 const freshNodes = () => cascadeUnlocks({}).newNodes;
+
+/** One more lesson step cleared today. */
+function stepToday(day: DayLog | null): DayLog {
+  const date = localToday();
+  return { date, steps: (day?.date === date ? day.steps : 0) + 1 };
+}
 
 /** Every completed topic is on the review schedule; ones saved before reviews existed are due now. */
 function withReviews(reviews: ReviewMap, nodes: ProgressMap, due?: string): ReviewMap {
@@ -68,6 +82,8 @@ export const useProgress = create<ProgressState>()(
       practice: {},
       reviews: {},
       welcomed: false,
+      day: null,
+      bests: {},
 
       setStatus: (id, status) => {
         const { nodes, reviews, streak, lastActiveDate } = get();
@@ -83,19 +99,26 @@ export const useProgress = create<ProgressState>()(
           },
         };
         const { newNodes } = cascadeUnlocks(merged);
+        // Finishing a topic any way, including by proving it, counts as a step today.
+        const finished = done && !isDone(existing.status);
         const entered = newlyEnteredRealms(nodes, newNodes);
         set({
           nodes: newNodes,
           reviews: withReviews(reviews, newNodes),
+          day: finished ? stepToday(get().day) : get().day,
           ...updateStreak(streak, lastActiveDate),
           pendingCeremony: entered[0] ?? null,
         });
       },
 
       recordCorrect: rungId => {
-        const { practice, streak, lastActiveDate } = get();
+        const { practice, day, streak, lastActiveDate } = get();
         const next = { ...practice, [rungId]: (practice[rungId] ?? 0) + 1 };
-        set({ practice: next, ...updateStreak(streak, lastActiveDate) });
+        set({
+          practice: next,
+          day: next[rungId] === RUNG_GOAL ? stepToday(day) : day,
+          ...updateStreak(streak, lastActiveDate),
+        });
 
         const topic = topicOfRung(rungId);
         const status = getStatus(topic, get().nodes);
@@ -122,6 +145,14 @@ export const useProgress = create<ProgressState>()(
 
       setWelcomed: () => set({ welcomed: true }),
 
+      recordSpeed: (key, score) => {
+        const { bests, streak, lastActiveDate } = get();
+        set({
+          bests: score > (bests[key] ?? 0) ? { ...bests, [key]: score } : bests,
+          ...updateStreak(streak, lastActiveDate),
+        });
+      },
+
       reset: () =>
         set({
           nodes: freshNodes(),
@@ -131,6 +162,8 @@ export const useProgress = create<ProgressState>()(
           practice: {},
           reviews: {},
           welcomed: false,
+          day: null,
+          bests: {},
         }),
     }),
     {
@@ -138,13 +171,15 @@ export const useProgress = create<ProgressState>()(
       name: 'mathtree-progress-v2',
       // Rehydrated from SkillTree on mount so server and client render the same first frame.
       skipHydration: true,
-      partialize: ({ nodes, streak, lastActiveDate, practice, reviews, welcomed }) => ({
+      partialize: ({ nodes, streak, lastActiveDate, practice, reviews, welcomed, day, bests }) => ({
         nodes,
         streak,
         lastActiveDate,
         practice,
         reviews,
         welcomed,
+        day,
+        bests,
       }),
       // Re-run unlocks in case the curriculum changed since this was saved.
       merge: (persisted, current) => {

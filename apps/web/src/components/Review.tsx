@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { NODE_BY_ID, RUNG_BY_ID, daysUntilDue, getRealmForNode, getStatus, type ReviewItem } from '@mathtree/curriculum';
+import {
+  NODE_BY_ID,
+  RUNG_BY_ID,
+  dailyPlan,
+  daysUntilDue,
+  getRealmForNode,
+  getStatus,
+  type ReviewItem,
+} from '@mathtree/curriculum';
+import { useShallow } from 'zustand/react/shallow';
 import { useProgress } from '@/lib/progress-store';
 import { ProblemCard } from './ProblemCard';
 import { Progress, Session } from './Session';
@@ -9,13 +18,15 @@ const inDays = (n: number) => (n <= 1 ? 'tomorrow' : `in ${n} days`);
 interface Props {
   items: ReviewItem[];
   onClose: () => void;
+  /** Go on to the rest of today's goal: a new step in this topic. */
+  onLearn: (topicId: string) => void;
 }
 
 /**
  * Mixed review: problems from different completed topics, in shuffled order and without their topic's
  * name on them, so the learner has to recognise which idea applies.
  */
-export function Review({ items, onClose }: Props) {
+export function Review({ items, onClose, onLearn }: Props) {
   const recordReview = useProgress(s => s.recordReview);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<boolean[]>([]);
@@ -47,13 +58,15 @@ export function Review({ items, onClose }: Props) {
           />
         </>
       ) : (
-        <Summary items={items} results={results} onClose={onClose} />
+        <Summary items={items} results={results} onClose={onClose} onLearn={onLearn} />
       )}
     </Session>
   );
 }
 
-function Summary({ items, results, onClose }: Props & { results: boolean[] }) {
+function Summary({ items, results, onClose, onLearn }: Props & { results: boolean[] }) {
+  const plan = useProgress(useShallow(dailyPlan));
+  const nextStep = plan.due === 0 && plan.steps === 0 ? plan.focus : null;
   const nodes = useProgress(s => s.nodes);
   const reviews = useProgress(s => s.reviews);
   const right = results.filter(Boolean).length;
@@ -91,8 +104,18 @@ function Summary({ items, results, onClose }: Props & { results: boolean[] }) {
           </li>
         ))}
       </ul>
+      {plan.done && <p className="card-text">That&apos;s today&apos;s goal done.</p>}
       <div className="card-actions">
-        <button className="btn-primary" autoFocus onClick={onClose}>Back to the tree</button>
+        {nextStep ? (
+          <>
+            <button className="btn-primary" autoFocus onClick={() => onLearn(nextStep)}>
+              Next: one new step in {NODE_BY_ID[nextStep].label}
+            </button>
+            <button className="btn-ghost" onClick={onClose}>Back to the tree</button>
+          </>
+        ) : (
+          <button className="btn-primary" autoFocus onClick={onClose}>Back to the tree</button>
+        )}
       </div>
     </div>
   );

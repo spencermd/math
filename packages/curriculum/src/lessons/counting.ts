@@ -63,6 +63,10 @@ const countingLists: Lesson = {
           return {
             prompt: `How many whole numbers are strictly between ${a} and ${b}?`,
             answer: { kind: 'number', value: count },
+            mistakes: [
+              { value: b - a, why: `${b} − ${a} counts one of the two ends. "Strictly between" leaves both out.` },
+              { value: b - a + 1, why: `That counts ${a} and ${b} as well. "Strictly between" leaves both out.` },
+            ],
             hints: [
               `"Strictly between" leaves out ${a} and ${b} themselves. What are the first and last numbers you do count?`,
               `The list is ${a + 1}, ${a + 2}, …, ${b - 1}. Subtract ${a} from each number.`,
@@ -82,6 +86,9 @@ const countingLists: Lesson = {
               ? `How many whole numbers are in the list ${a}, ${a + 1}, ${a + 2}, …, ${b}?`
               : `Maya read from the top of page ${a} to the bottom of page ${b}. How many pages did she read?`,
           answer: { kind: 'number', value: count },
+          mistakes: [
+            { value: b - a, why: `${b} − ${a} counts the steps between the numbers, which leaves out the first one.` },
+          ],
           hints: [
             `It isn't ${b} − ${a}. Try a tiny case: how many numbers are in 5, 6, 7?`,
             `Subtract ${a - 1} from every number so the list starts at 1.`,

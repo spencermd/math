@@ -52,11 +52,19 @@ export type Answer =
   | { kind: 'fraction'; num: number; den: number }
   | { kind: 'choice'; options: string[]; correct: number };
 
+/** A wrong answer that a known slip leads to, and what to say to someone who gives it. */
+export interface Mistake {
+  value: number;
+  why: string;
+}
+
 /** A concrete problem, produced by a rung's generator. */
 export interface Problem {
   prompt: string;
   visual?: Visual;
   answer: Answer;
+  /** Tempting wrong answers to a number problem, most likely first. */
+  mistakes?: Mistake[];
   hints: string[];
   solution: Step[];
 }
