@@ -28,6 +28,7 @@ import {
   type Tier,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
+import { MathText } from './MathText';
 import { ProblemCard, StepView } from './ProblemCard';
 import { Session } from './Session';
 import { VisualView } from './Visual';
@@ -427,7 +428,7 @@ function TimedProblem({
 
   return (
     <div className="card">
-      <h3 className="prompt">{problem.prompt}</h3>
+      <h3 className="prompt"><MathText text={problem.prompt} /></h3>
       {problem.visual && <VisualView visual={problem.visual} />}
       {answer.kind !== 'choice' ? (
         <form className="answer-row" onSubmit={onSubmit}>
@@ -453,7 +454,7 @@ function TimedProblem({
               className="choice"
               onClick={() => give(i === answer.correct ? { outcome: 'right' } : { outcome: 'wrong', given: option })}
             >
-              {option}
+              <MathText text={option} />
             </button>
           ))}
         </div>
@@ -508,13 +509,13 @@ function Results({
               const problem = makeProblem(m.rungId, m.seed);
               return (
                 <li key={i}>
-                  <p className="missed-prompt">{problem.prompt}</p>
+                  <p className="missed-prompt"><MathText text={problem.prompt} /></p>
                   {problem.visual && <VisualView visual={problem.visual} />}
                   <p className="missed-answer">
                     {m.outcome === 'timeout' ? 'Out of time. ' : `You said ${m.given?.replace('-', '−')}. `}
                     <strong>Answer: {answerText(problem.answer)}</strong>
                   </p>
-                  {m.note && <p className="feedback-note">{m.note}</p>}
+                  {m.note && <p className="feedback-note"><MathText text={m.note} /></p>}
                   <Source rungId={m.rungId} onStudy={onStudy} />
                   <details className="missed-solution">
                     <summary>How to solve it</summary>

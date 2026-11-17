@@ -511,6 +511,29 @@ button {
   line-height: 1.3;
   white-space: pre-wrap;
 }
+/* A problem is read slowly, so it is set lighter and looser than a heading, and never leaves a word stranded. */
+.card h3.prompt {
+  max-width: 34em;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.card-text,
+.missed-prompt,
+.hint {
+  text-wrap: pretty;
+}
+.math-term {
+  white-space: nowrap;
+}
+.math-var {
+  font-family: var(--font-stix), Georgia, serif;
+  font-style: italic;
+  font-size: 1.1em;
+  line-height: 1;
+  padding-right: 0.03em;
+}
 .card-text {
   margin-top: 12px;
   max-width: 60ch;
@@ -1488,6 +1511,7 @@ button {
   .stage { padding: 16px 16px 40px; }
   .card { padding: 20px; }
   .card h3 { font-size: 20px; }
+  .card h3.prompt { font-size: 19px; }
   .dot-group { grid-template-columns: repeat(5, 36px); gap: 6px; }
   .count-dot { width: 36px; height: 36px; }
   .top-bar { padding: 12px 16px; }

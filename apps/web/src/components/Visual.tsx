@@ -1,3 +1,4 @@
+import { MathText } from './MathText';
 import { useState } from 'react';
 import type { Visual } from '@mathtree/curriculum';
 
@@ -191,7 +192,7 @@ function Rows({ rows }: Of<'rows'>) {
         {rows.slice(0, shown).map((row, i) => (
           <div key={i} style={{ display: 'contents' }}>
             <span className="row-label">{row.label}</span>
-            <span className="row-text" data-last={(done && i === rows.length - 1) || undefined}>{row.text}</span>
+            <span className="row-text" data-last={(done && i === rows.length - 1) || undefined}><MathText text={row.text} /></span>
           </div>
         ))}
       </div>

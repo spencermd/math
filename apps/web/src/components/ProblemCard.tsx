@@ -11,12 +11,13 @@ import {
   type Step,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
+import { MathText } from './MathText';
 import { VisualView } from './Visual';
 
 export function StepView({ step }: { step: Step }) {
   return (
     <div className="step">
-      <p className="card-text">{step.text}</p>
+      <p className="card-text"><MathText text={step.text} /></p>
       {step.visual && <VisualView key={JSON.stringify(step.visual)} visual={step.visual} />}
     </div>
   );
@@ -127,7 +128,7 @@ export function ProblemCard({
   return (
     <div className="card">
       <p className="card-kicker">{kicker}</p>
-      <h3 className="prompt">{problem.prompt}</h3>
+      <h3 className="prompt"><MathText text={problem.prompt} /></h3>
       {problem.visual && <VisualView visual={problem.visual} />}
 
       {answer.kind !== 'choice' ? (
@@ -151,7 +152,7 @@ export function ProblemCard({
         <div className="choices">
           {answer.options.map((option, i) => (
             <button key={option} className="choice" disabled={locked} data-right={(locked && i === answer.correct) || undefined} onClick={() => submit(i === answer.correct)}>
-              {option}
+              <MathText text={option} />
             </button>
           ))}
         </div>
@@ -169,7 +170,7 @@ export function ProblemCard({
                   : `Not quite. ${answer.kind === 'choice' ? 'Pick again' : 'Change your answer to try again'}, or see how it's solved.`}
           </p>
         )}
-        {result === 'wrong' && oneShot && note && <p className="feedback-note">{note}</p>}
+        {result === 'wrong' && oneShot && note && <p className="feedback-note"><MathText text={note} /></p>}
         {result === 'unreduced' && <p className="feedback" data-kind="wrong">That&apos;s the right value. Now write it in lowest terms.</p>}
         {oneShot && settled && attempts === 0 && (
           <p className="feedback" data-kind="wrong">The answer is {answerText(answer)}.</p>
@@ -180,7 +181,7 @@ export function ProblemCard({
       {settled && after}
 
       {problem.hints.slice(0, hints).map((hint, i) => (
-        <p className="hint" key={i}><strong>Hint.</strong> {hint}</p>
+        <p className="hint" key={i}><strong>Hint.</strong> <MathText text={hint} /></p>
       ))}
 
       {shown > 0 && (
