@@ -1541,3 +1541,92 @@ button {
     transition: none !important;
   }
 }
+
+/* Contest readiness: a level per topic, from Factory speed and accuracy. */
+.level-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.level-chip[data-level="beginner"] {
+  border-color: #5599ee;
+  color: #9cc4f5;
+}
+.level-chip[data-level="intermediate"] {
+  border-color: #40d4b8;
+  color: #8ee8d6;
+}
+.level-chip[data-level="competitive"] {
+  border-color: var(--gold-deep);
+  color: var(--gold);
+}
+.readiness {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-raised);
+}
+.readiness-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.readiness-head h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.readiness-measures {
+  display: flex;
+  gap: 24px;
+  margin-top: 10px;
+}
+.readiness-measures dt {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.readiness-measures dd {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.readiness-measures dd span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+.pace {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink-muted);
+}
+.pace-measures,
+.standing-measures {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.standing-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.standing-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.standing-topic {
+  font-weight: 600;
+  color: var(--ink);
+}

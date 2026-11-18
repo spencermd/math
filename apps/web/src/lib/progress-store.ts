@@ -3,7 +3,9 @@ import { persist } from 'zustand/middleware';
 import {
   MASTERY_STAGE,
   NODE_BY_ID,
+  MASTERY,
   NO_STATS,
+  addAttempt,
   countAnswer,
   firstReview,
   getStatus,
@@ -15,6 +17,9 @@ import {
   topicOfRung,
   updateStreak,
   type AnswerEvent,
+  type AnswerMode,
+  type Attempt,
+  type MasteryMap,
   type PracticeMap,
   type ProgressMap,
   type ReviewMap,
@@ -41,6 +46,8 @@ interface ProgressState {
   stats: Stats;
   /** Badges earned: id → the date. */
   badges: Record<string, string>;
+  /** Recent Problem Factory problems per topic, with their times and tries, for contest-readiness levels. */
+  mastery: MasteryMap;
   /** Badges earned but not yet announced, oldest first. Not saved. */
   unseenBadges: string[];
 
@@ -55,6 +62,11 @@ interface ProgressState {
   recordReview: (topicId: string, firstTry: boolean, counts: boolean) => void;
   /** Note any answer to any problem, for the running totals and the badges that watch single answers. */
   recordAnswer: (given: GivenAnswer) => void;
+  /**
+   * File a finished problem toward its topic's level, if it came from a mode that counts. Give `ms`, or
+   * `shownAt` (clock time the problem appeared) and the store reads the clock. Returns what was filed.
+   */
+  recordAttempt: (attempt: Omit<Attempt, 'at' | 'ms'> & { ms?: number; shownAt?: number }, mode: AnswerMode) => Attempt;
   /** Keep a timed-round score if it beats the best so far. */
   recordScore: (key: string, score: number) => void;
   setWelcomed: () => void;
@@ -91,6 +103,7 @@ const FRESH = {
   bests: {},
   stats: NO_STATS,
   badges: {},
+  mastery: {},
   unseenBadges: [],
 };
 
@@ -175,6 +188,13 @@ export const useProgress = create<ProgressState>()(
           award(event);
         },
 
+        recordAttempt: ({ shownAt, ms, ...given }, mode) => {
+          const at = Date.now();
+          const attempt: Attempt = { ...given, ms: ms ?? at - (shownAt ?? at), at };
+          if (MASTERY.countedModes.includes(mode)) set({ mastery: addAttempt(get().mastery, attempt) });
+          return attempt;
+        },
+
         recordScore: (key, score) => {
           const { bests } = get();
           if (score > (bests[key] ?? 0)) set({ bests: { ...bests, [key]: score } });
@@ -195,7 +215,7 @@ export const useProgress = create<ProgressState>()(
       name: 'mathtree-progress-v2',
       // Rehydrated from SkillTree on mount so server and client render the same first frame.
       skipHydration: true,
-      partialize: ({ nodes, streak, lastActiveDate, practice, reviews, welcomed, bests, stats, badges }) => ({
+      partialize: ({ nodes, streak, lastActiveDate, practice, reviews, welcomed, bests, stats, badges, mastery }) => ({
         nodes,
         streak,
         lastActiveDate,
@@ -205,6 +225,7 @@ export const useProgress = create<ProgressState>()(
         bests,
         stats,
         badges,
+        mastery,
       }),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<ProgressState>;
@@ -217,6 +238,8 @@ export const useProgress = create<ProgressState>()(
           ...saved,
           nodes,
           stats: { ...NO_STATS, ...saved.stats },
+          // Saves from before levels existed have no record yet.
+          mastery: saved.mastery ?? {},
           reviews: withReviews(saved.reviews ?? {}, nodes, localToday()),
         };
       },

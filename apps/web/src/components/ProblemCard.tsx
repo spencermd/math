@@ -45,6 +45,21 @@ interface Props {
   onStepBack?: (rungId: string) => void;
   /** Shown once the outcome is settled. */
   after?: ReactNode;
+  /**
+   * Called once, when the problem is over: solved (right, before seeing the solution), or given up on
+   * by opening the solution or moving on. Times and tries feed the topic's contest-readiness level.
+   */
+  onFinish?: (result: Finish) => void;
+}
+
+export interface Finish {
+  solved: boolean;
+  /** Answers submitted, the right one included. */
+  tries: number;
+  /** Hints the learner asked for. Ones offered after a miss don't count. */
+  hints: number;
+  /** Clock time the problem appeared, in ms. */
+  shownAt: number;
 }
 
 export function ProblemCard({
@@ -59,6 +74,7 @@ export function ProblemCard({
   nextLabel = 'Next problem',
   onStepBack,
   after,
+  onFinish,
 }: Props) {
   const rung = RUNG_BY_ID[rungId];
   const problem = makeProblem(rungId, seed);
@@ -74,10 +90,19 @@ export function ProblemCard({
   const [note, setNote] = useState<string | null>(null);
   const [nudged, setNudged] = useState(false);
 
+  const [asked, setAsked] = useState(0); // hints asked for, rather than offered after a miss
+
   const shownAt = useRef(0);
   useEffect(() => {
     shownAt.current = Date.now();
   }, []);
+
+  const finished = useRef(false);
+  const finish = (solvedIt: boolean, tries: number) => {
+    if (finished.current) return;
+    finished.current = true;
+    onFinish?.({ solved: solvedIt, tries, hints: asked, shownAt: shownAt.current });
+  };
 
   const solved = result === 'correct';
   // The outcome is settled by the first answer, or by asking to see the solution.
@@ -99,6 +124,7 @@ export function ProblemCard({
       answer,
       shownAt: shownAt.current,
     });
+    if (right) finish(shown === 0, attempts + 1);
     setResult(right ? 'correct' : 'wrong');
     setAttempts(a => a + 1);
     setNote(why);
@@ -110,7 +136,13 @@ export function ProblemCard({
 
   const showSolution = () => {
     if (!settled) onOutcome(false);
+    finish(false, attempts);
     setShown(1);
+  };
+
+  const next = () => {
+    finish(false, attempts);
+    onNext();
   };
 
   const onSubmit = (e: FormEvent) => {
@@ -199,12 +231,20 @@ export function ProblemCard({
       <div className="card-actions">
         {(locked || shown >= problem.solution.length) && (
           // Focused as soon as the answer is settled, so Enter carries straight on to the next problem.
-          <button key={locked ? 'next' : 'again'} className="btn-primary" autoFocus={locked} onClick={onNext}>
+          <button key={locked ? 'next' : 'again'} className="btn-primary" autoFocus={locked} onClick={next}>
             {locked ? nextLabel : 'Try another like this'}
           </button>
         )}
         {!locked && !oneShot && hints < problem.hints.length && (
-          <button className="btn-ghost" onClick={() => setHints(h => h + 1)}>{hints ? 'Another hint' : 'Hint'}</button>
+          <button
+            className="btn-ghost"
+            onClick={() => {
+              setHints(h => h + 1);
+              setAsked(n => n + 1);
+            }}
+          >
+            {hints ? 'Another hint' : 'Hint'}
+          </button>
         )}
         {shown === 0 && (
           <button className="btn-ghost" onClick={showSolution}>
@@ -217,7 +257,7 @@ export function ProblemCard({
           </button>
         )}
         {!locked && attempts > 0 && shown < problem.solution.length && (
-          <button className="btn-ghost" onClick={onNext}>Skip this one</button>
+          <button className="btn-ghost" onClick={next}>Skip this one</button>
         )}
       </div>
     </div>

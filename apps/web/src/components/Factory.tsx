@@ -21,15 +21,19 @@ import {
   makeProblem,
   parseTyped,
   scopeKey,
+  targetMs,
+  topicMetrics,
   topicOfRung,
   type FactoryItem,
   type FactoryMode,
   type FactoryScope,
+  type Attempt,
   type Tier,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { MathText } from './MathText';
 import { ProblemCard, StepView } from './ProblemCard';
+import { LevelChip, measures, stopwatch } from './Readiness';
 import { Session } from './Session';
 import { VisualView } from './Visual';
 
@@ -126,6 +130,24 @@ export function Factory({ scope: initialScope, onClose, onStudy, onReview }: Pro
     const timer = setInterval(() => setRun(r => r && tick(r, Date.now())), 200);
     return () => clearInterval(timer);
   }, [live]);
+
+  // A countdown problem that runs out of time counts against its topic's level.
+  const filed = useRef(0);
+  useEffect(() => {
+    if (!run) {
+      filed.current = 0;
+      return;
+    }
+    if (run.answered.length < filed.current) filed.current = 0;
+    for (const a of run.answered.slice(filed.current)) {
+      if (a.outcome === 'timeout') {
+        useProgress
+          .getState()
+          .recordAttempt({ rungId: a.rungId, ms: COUNTDOWN_SECONDS * 1000, tries: 0, hints: 0, solved: false, timedOut: true }, run.mode);
+      }
+    }
+    filed.current = run.answered.length;
+  }, [run]);
 
   // Keep the score once a timed round ends.
   const finished = run?.over ? run : null;
@@ -314,6 +336,25 @@ function Source({ rungId, onStudy }: { rungId: string; onStudy: (topicId: string
   );
 }
 
+/** How long a solved problem took against contest pace, and where its topic stands now. */
+function Pace({ rungId, result }: { rungId: string; result: Attempt }) {
+  const topicId = topicOfRung(rungId);
+  const mastery = useProgress(s => s.mastery);
+  const metrics = topicMetrics(topicId, mastery);
+  return (
+    <p className="pace">
+      {result.solved && (
+        <>
+          Solved in {stopwatch(result.ms)}
+          {result.tries > 1 && ` on try ${result.tries}`}. Contest pace is {stopwatch(targetMs(rungId))}.{' '}
+        </>
+      )}
+      {NODE_BY_ID[topicId].label}: <LevelChip metrics={metrics} />
+      {metrics.count > 0 && <span className="pace-measures"> {measures(metrics)}</span>}
+    </p>
+  );
+}
+
 function FreePlay({
   free,
   onChange,
@@ -326,6 +367,7 @@ function FreePlay({
   onStudy: (topicId: string) => void;
 }) {
   const item = free.items[free.index % free.items.length];
+  const [last, setLast] = useState<(Attempt & { index: number }) | null>(null);
   return (
     <>
       <div className="speed-head">
@@ -340,15 +382,23 @@ function FreePlay({
         rungId={item.rungId}
         seed={item.seed}
         mode="free"
-        oneShot
         kicker={`Problem ${free.index + 1}`}
         onOutcome={firstTry => {
           if (!firstTry) noteMiss(item.rungId);
           onChange({ ...free, solved: free.solved + (firstTry ? 1 : 0), streak: firstTry ? free.streak + 1 : 0 });
         }}
-        rightText={() => 'Correct!'}
+        rightText={earned => (earned ? 'Correct!' : 'Got it.')}
         onNext={() => onChange({ ...free, index: free.index + 1 })}
-        after={<Source rungId={item.rungId} onStudy={onStudy} />}
+        onFinish={result => {
+          const filed = useProgress.getState().recordAttempt({ rungId: item.rungId, ...result }, 'free');
+          setLast({ ...filed, index: free.index });
+        }}
+        after={
+          <>
+            {last?.index === free.index && <Pace rungId={item.rungId} result={last} />}
+            <Source rungId={item.rungId} onStudy={onStudy} />
+          </>
+        }
       />
     </>
   );
@@ -414,6 +464,10 @@ function TimedProblem({
       shownAt: shownAt.current,
       deadline,
     });
+    const right = result.outcome === 'right';
+    useProgress
+      .getState()
+      .recordAttempt({ rungId: item.rungId, shownAt: shownAt.current, tries: 1, hints: 0, solved: right }, mode);
     onAnswer(result);
   };
 
@@ -501,6 +555,8 @@ function Results({
         </div>
       </div>
 
+      <Standing topics={[...new Set(run.answered.map(a => topicOfRung(a.rungId)))]} />
+
       {missed.length > 0 && (
         <div className="card">
           <p className="card-kicker">The ones that got away</p>
@@ -530,5 +586,28 @@ function Results({
         </div>
       )}
     </>
+  );
+}
+
+/** Each topic from a round, with its level now. */
+function Standing({ topics }: { topics: string[] }) {
+  const mastery = useProgress(s => s.mastery);
+  if (!topics.length) return null;
+  return (
+    <div className="card">
+      <p className="card-kicker">Where you stand</p>
+      <ul className="standing-list">
+        {topics.map(id => {
+          const m = topicMetrics(id, mastery);
+          return (
+            <li key={id}>
+              <span className="standing-topic">{NODE_BY_ID[id].label}</span>
+              <LevelChip metrics={m} />
+              <span className="standing-measures">{measures(m)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

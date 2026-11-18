@@ -12,6 +12,7 @@ import {
   type Status,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
+import { Readiness } from './Readiness';
 
 const STATUS_TEXT: Record<Status, string> = {
   available: 'Not started',
@@ -115,6 +116,8 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
           </div>
         )}
       </div>
+
+      {hasLesson && <Readiness topicId={topic.id} />}
 
       <TopicList title="Builds on" ids={PREREQS[topic.id]} onSelect={onSelect} />
       {!isDone(status) && missing.length > 0 && (

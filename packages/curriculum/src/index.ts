@@ -5,3 +5,5 @@ export * from './review.ts';
 export * from './answers.ts';
 export * from './factory.ts';
 export * from './badges.ts';
+export * from './mastery-config.ts';
+export * from './mastery.ts';
