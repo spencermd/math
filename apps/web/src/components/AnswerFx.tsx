@@ -34,7 +34,7 @@ export function AnswerFx({ kind }: { kind: FxKind }) {
   return (
     <div className="fx fx-wrong" aria-hidden>
       <div className="fx-flames">
-        {Array.from({ length: 7 }, (_, i) => (
+        {Array.from({ length: 6 }, (_, i) => (
           <span key={i} className="fx-flame" style={{ ['--i' as string]: i }}>🔥</span>
         ))}
       </div>

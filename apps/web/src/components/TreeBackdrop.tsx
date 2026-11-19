@@ -78,7 +78,40 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
       { x: tip.x - lean * 0.25, y: tip.y + 240 },
       tip,
     );
-    return { id, d: taper(pts, 70, 14) };
+    // A couple of twigs curl off each limb, so it reads as a branch rather than a pole.
+    const twigs = [0.55, 0.78].map((at, k) => {
+      const from = pts[Math.round(at * (pts.length - 1))];
+      const side = k % 2 ? 1 : -1;
+      return taper(
+        cubic(
+          from,
+          { x: from.x + side * 60, y: from.y - 30 },
+          { x: from.x + side * 110, y: from.y - 90 },
+          { x: from.x + side * 120, y: from.y - 150 },
+          12,
+        ),
+        14,
+        2,
+      );
+    });
+    return { id, d: taper(pts, 56, 10), twigs };
+  });
+  // Clouds of foliage round each realm's glade: the crown of the oak.
+  const foliage = REALM_ORDER.flatMap(id => {
+    const r = realms[id];
+    const next = rand(id * 104729);
+    const cx = r.x + r.width / 2;
+    const cy = r.y + r.height / 2;
+    return Array.from({ length: 30 }, (_, i) => {
+      const a = (i / 30) * Math.PI * 2 + next() * 0.2;
+      const k = 0.5 + next() * 0.12;
+      return {
+        id,
+        x: cx + Math.cos(a) * r.width * k,
+        y: cy + Math.sin(a) * r.height * k,
+        r: 50 + next() * 70,
+      };
+    });
   });
   const trunk = taper(
     cubic(
@@ -87,8 +120,8 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
       { x: trunkTop.x + 40, y: trunkTop.y + 160 },
       { x: trunkTop.x, y: trunkTop.y - 20 },
     ),
-    300,
-    130,
+    230,
+    96,
   );
   const roots = [-1, 1].flatMap(side =>
     [0, 1, 2].map(k => {
@@ -130,8 +163,8 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
           </filter>
           {REALM_ORDER.map(id => (
             <radialGradient key={id} id={`glade-${id}`}>
-              <stop offset="0" stopColor={REALMS[id].border} stopOpacity="0.2" />
-              <stop offset="0.6" stopColor={REALMS[id].color} stopOpacity="0.12" />
+              <stop offset="0" stopColor={REALMS[id].border} stopOpacity="0.26" />
+              <stop offset="0.6" stopColor={REALMS[id].color} stopOpacity="0.16" />
               <stop offset="1" stopColor={REALMS[id].color} stopOpacity="0" />
             </radialGradient>
           ))}
@@ -159,9 +192,25 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
           );
         })}
 
-        <g className="oak" filter="url(#oak-glow)" stroke="#f5d06055" strokeWidth={3} fill="url(#bark)">
+        <g className="foliage">
+          {foliage.map((f, i) => (
+            <circle
+              key={i}
+              cx={f.x}
+              cy={f.y}
+              r={f.r}
+              fill={REALMS[f.id].color}
+              fillOpacity={0.07}
+              stroke={REALMS[f.id].border}
+              strokeOpacity={0.1}
+              strokeWidth={2}
+            />
+          ))}
+        </g>
+
+        <g className="oak" filter="url(#oak-glow)" stroke="#ecc96a66" strokeWidth={2.5} fill="url(#bark)">
           {roots.map((d, i) => <path key={`r${i}`} d={d} />)}
-          {branches.map(b => <path key={b.id} d={b.d} />)}
+          {branches.flatMap(b => [<path key={b.id} d={b.d} />, ...b.twigs.map((t, k) => <path key={`${b.id}t${k}`} d={t} />)])}
           <path d={trunk} />
         </g>
 

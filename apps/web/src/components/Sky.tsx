@@ -14,34 +14,37 @@ export function Sky() {
   );
 }
 
-/** One corner's worth of vine, leaves and flowers; mirrored with CSS for the other corners. */
-function VineCorner({ className }: { className: string }) {
+/** A vine trailing down one side of the screen, with leaves, thorns and flowers; mirrored for the other side. */
+function VineSide({ className }: { className: string }) {
   const flower = (x: number, y: number, r: number, color: string) => (
     <g transform={`translate(${x} ${y})`}>
       {[0, 72, 144, 216, 288].map(a => (
         <ellipse key={a} cx={0} cy={-r} rx={r * 0.55} ry={r} fill={color} transform={`rotate(${a})`} opacity={0.85} />
       ))}
-      <circle r={r * 0.45} fill="#f5d060" />
+      <circle r={r * 0.45} fill="#ecc96a" />
     </g>
   );
   const leaf = (x: number, y: number, a: number) => (
     <path d="M0 0 C6 -8 18 -8 24 0 C18 8 6 8 0 0 Z" fill="#4f6b45" transform={`translate(${x} ${y}) rotate(${a})`} />
   );
   return (
-    <svg className={`vine ${className}`} width="260" height="200" viewBox="0 0 260 200" aria-hidden>
-      <path d="M0 6 C40 30 70 10 110 26 C150 42 170 20 210 34 C230 40 245 52 258 46" stroke="#3d5338" strokeWidth="4" fill="none" />
-      <path d="M6 0 C26 40 4 70 22 110 C38 146 16 170 30 198" stroke="#3d5338" strokeWidth="4" fill="none" />
-      {/* Thorns along the vine. */}
-      <path d="M60 22 l4 -10 l3 9 M150 40 l5 -9 l2 10 M16 60 l-10 3 l9 4 M26 140 l-10 2 l9 5" stroke="#6b5a4a" strokeWidth="2" fill="none" />
-      {leaf(30, 18, -20)}
-      {leaf(95, 22, 15)}
-      {leaf(180, 30, -10)}
-      {leaf(12, 80, 100)}
-      {leaf(24, 160, 70)}
-      {flower(70, 18, 7, '#b58ad8')}
-      {flower(130, 36, 6, '#d896b4')}
-      {flower(220, 38, 5, '#b58ad8')}
-      {flower(18, 118, 6, '#d896b4')}
+    <svg className={`vine ${className}`} width="70" height="560" viewBox="0 0 70 560" aria-hidden>
+      <path
+        d="M4 0 C30 40 2 80 18 130 C34 180 4 220 16 270 C28 320 6 360 14 410 C22 460 4 500 10 560"
+        stroke="#3d5338"
+        strokeWidth="4"
+        fill="none"
+      />
+      <path d="M22 100 l10 -3 l-8 -6 M12 240 l11 0 l-8 -7 M20 380 l10 -2 l-8 -6 M8 500 l11 1 l-8 -7" stroke="#6b5a4a" strokeWidth="2" fill="none" />
+      {leaf(14, 40, 20)}
+      {leaf(24, 150, -30)}
+      {leaf(10, 205, 40)}
+      {leaf(20, 330, -20)}
+      {leaf(12, 440, 30)}
+      {flower(26, 70, 7, '#b58ad8')}
+      {flower(10, 180, 6, '#d896b4')}
+      {flower(24, 300, 7, '#b58ad8')}
+      {flower(14, 470, 6, '#d896b4')}
     </svg>
   );
 }
@@ -49,8 +52,8 @@ function VineCorner({ className }: { className: string }) {
 export function Vines() {
   return (
     <>
-      <VineCorner className="vine-tl" />
-      <VineCorner className="vine-tr" />
+      <VineSide className="vine-tl" />
+      <VineSide className="vine-tr" />
     </>
   );
 }
