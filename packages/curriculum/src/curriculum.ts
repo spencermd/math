@@ -45,12 +45,12 @@ export interface TopicEdge {
 // ── Realms ────────────────────────────────────────────────────────────────────
 export const REALMS: Record<RealmId, RealmDef> = {
   // Muted jewel tones for the dark fairy-core look; `border` is the lit edge, `glow` the halo.
-  1: { id:1, label:'I',   name:'Number Sense',  sub:'Calculate cleverly, not laboriously',        color:'#A8743A', border:'#E2B57A', glow:'#E2B57A40' },
-  2: { id:2, label:'II',  name:'Algebra',       sub:'Turn any story into an equation you can solve', color:'#6A4E9A', border:'#AE95DC', glow:'#AE95DC40' },
-  3: { id:3, label:'III', name:'Counting',      sub:'Count without counting one by one',          color:'#55784A', border:'#9CC48A', glow:'#9CC48A40' },
-  4: { id:4, label:'IV',  name:'Probability',   sub:'Measure chance by counting what can happen', color:'#8C4865', border:'#D896B4', glow:'#D896B440' },
-  5: { id:5, label:'V',   name:'Number Theory', sub:'The hidden structure of whole numbers',      color:'#3C7472', border:'#7DC8C0', glow:'#7DC8C040' },
-  6: { id:6, label:'VI',  name:'Geometry',      sub:'See the figure inside the figure',           color:'#56689E', border:'#A4B6EC', glow:'#A4B6EC40' },
+  1: { id:1, label:'I',   name:'Number Sense',  sub:'Calculate cleverly, not laboriously',        color:'#8A5A34', border:'#D4A574', glow:'#D4A57440' },
+  2: { id:2, label:'II',  name:'Algebra',       sub:'Turn any story into an equation you can solve', color:'#4F3D8C', border:'#9681D9', glow:'#9681D940' },
+  3: { id:3, label:'III', name:'Counting',      sub:'Count without counting one by one',          color:'#4A6538', border:'#A3BE88', glow:'#A3BE8840' },
+  4: { id:4, label:'IV',  name:'Probability',   sub:'Measure chance by counting what can happen', color:'#6E4258', border:'#C49AB2', glow:'#C49AB240' },
+  5: { id:5, label:'V',   name:'Number Theory', sub:'The hidden structure of whole numbers',      color:'#2A6A7A', border:'#7DBCC8', glow:'#7DBCC840' },
+  6: { id:6, label:'VI',  name:'Geometry',      sub:'See the figure inside the figure',           color:'#34509A', border:'#93AEE6', glow:'#93AEE640' },
 };
 
 export const REALM_ORDER: RealmId[] = [1, 2, 3, 4, 5, 6];

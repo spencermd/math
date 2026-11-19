@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
-/* The tree is a night-sky world, so the app is dark-only by design. Dark fairy core: muted plums, gold glow. */
+/* The tree is a night forest, so the app is dark-only by design. Dark fairy forest: moss and pine greens, misty plums,
+   purple-blue night accents and a gold glow. */
 :root {
   color-scheme: dark;
-  --bg: #0d0a18;
-  --surface: #191427;
-  --surface-raised: #221b33;
-  --line: #352b4a;
-  --ink: #fbf7ff;
-  --ink-muted: #b3a9c6;
-  --ink-faint: #74698c;
+  --bg: #0b100e;
+  --surface: #141b18;
+  --surface-raised: #1c2521;
+  --line: #2f3d36;
+  --ink: #f4f2ea;
+  --ink-muted: #b6c2b4;
+  --ink-faint: #7f8e83;
   --gold: #ecc96a;
   --gold-deep: #c99a3a;
   --gold-glow: #ecc96a55;
@@ -56,8 +57,8 @@ button {
   height: 100dvh;
   width: 100%;
   overflow: hidden;
-  /* Purple ombré: a deep violet sky fading to near-black at the ground. */
-  background: linear-gradient(180deg, #1c1236 0%, #150f2a 35%, #0f0b1d 70%, #0a0812 100%);
+  /* Night-forest ombré: an indigo sky, through plum mist, down to a pine-dark forest floor. */
+  background: linear-gradient(180deg, #121637 0%, #1a1734 22%, #201829 45%, #172019 75%, #0a100c 100%);
 }
 
 .tree-shell .react-flow {
@@ -131,7 +132,7 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 20px;
-  background: linear-gradient(180deg, rgba(20, 13, 38, 0.92) 0%, rgba(20, 13, 38, 0.55) 70%, transparent 100%);
+  background: linear-gradient(180deg, rgba(15, 19, 40, 0.92) 0%, rgba(15, 19, 40, 0.55) 70%, transparent 100%);
   pointer-events: none;
 }
 .top-bar > * {
@@ -208,7 +209,7 @@ button {
   border: 1px solid var(--line);
   border-top: 3px solid var(--realm);
   border-radius: 16px;
-  background: rgba(22, 22, 38, 0.94);
+  background: rgba(19, 26, 23, 0.94);
   backdrop-filter: blur(14px);
   animation: slide-in 220ms ease-out;
 }
@@ -267,7 +268,7 @@ button {
   margin-top: 16px;
   font-size: 15px;
   line-height: 1.6;
-  color: #d4d4e4;
+  color: #dce1d6;
 }
 .panel-actions {
   margin-top: 20px;
@@ -350,7 +351,7 @@ button {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(5, 5, 12, 0.82);
+  background: rgba(4, 8, 7, 0.82);
   backdrop-filter: blur(6px);
   animation: fade-in 300ms ease-out;
   z-index: 50;
@@ -403,8 +404,8 @@ button {
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(ellipse at 50% -10%, #3a2470aa 0%, transparent 55%),
-    linear-gradient(180deg, #1a1131 0%, #120d22 50%, #0b0815 100%);
+    radial-gradient(ellipse at 50% -10%, #463181aa 0%, transparent 55%),
+    linear-gradient(180deg, #141633 0%, #151d1a 55%, #0a100c 100%);
   animation: fade-in 200ms ease-out;
 }
 .lesson * {
@@ -1477,7 +1478,7 @@ button {
   margin-bottom: 10px;
   font-size: 16px;
   line-height: 1.6;
-  color: #d4d4e4;
+  color: #dce1d6;
 }
 .welcome-option {
   display: flex;
@@ -1689,13 +1690,13 @@ button {
 .aurora-a {
   top: -12vh;
   left: -10vw;
-  background: linear-gradient(100deg, transparent, #3fae8c 30%, #6a4fbf 70%, transparent);
+  background: linear-gradient(100deg, transparent, #2c7b91 30%, #3365ca 70%, transparent);
   animation: aurora-drift 22s ease-in-out infinite alternate;
 }
 .aurora-b {
   top: -8vh;
   right: -15vw;
-  background: linear-gradient(80deg, transparent, #8a4fbf 35%, #d07ab0 65%, transparent);
+  background: linear-gradient(80deg, transparent, #463181 35%, #9681d9 65%, transparent);
   animation: aurora-drift 28s ease-in-out infinite alternate-reverse;
 }
 .aurora-c {
@@ -1703,7 +1704,7 @@ button {
   left: 20vw;
   height: 25vh;
   opacity: 0.18;
-  background: linear-gradient(90deg, transparent, #4fbfa8, #8fd0ff, transparent);
+  background: linear-gradient(90deg, transparent, #5f8f6a, #8fc4c8, transparent);
   animation: aurora-drift 34s ease-in-out infinite alternate;
 }
 @keyframes aurora-drift {
@@ -1803,9 +1804,9 @@ button {
   inset: 0;
   border-radius: 50% / 45%;
   background:
-    radial-gradient(ellipse at center, #1a0f2e 0%, #1a0f2e 28%, transparent 62%),
-    conic-gradient(from 0deg, #6a4fbf, #3fae8c, #ecc96a, #d07ab0, #6a4fbf);
-  box-shadow: 0 0 30px 8px #8a6ad866, inset 0 0 30px #000;
+    radial-gradient(ellipse at center, #0f1820 0%, #0f1820 28%, transparent 62%),
+    conic-gradient(from 0deg, #463181, #2c7b91, #ecc96a, #9681d9, #463181);
+  box-shadow: 0 0 30px 8px #9681d966, inset 0 0 30px #000;
   animation: portal-spin 6s linear infinite;
   filter: blur(0.5px);
 }
@@ -1874,7 +1875,7 @@ button {
   width: var(--size);
   height: var(--size);
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--cloak) 55%, #fff 0%) 0%, var(--cloak) 55%, #120c1e 100%);
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--cloak) 55%, #fff 0%) 0%, var(--cloak) 55%, #0c130f 100%);
   border: 2px solid color-mix(in srgb, var(--cloak), #ecc96a 45%);
   box-shadow: 0 0 calc(var(--size) * 0.3) color-mix(in srgb, var(--cloak), transparent 40%);
 }
@@ -1919,7 +1920,7 @@ button {
 /* ── Wardrobe ─────────────────────────────────────── */
 .wardrobe {
   --realm: var(--gold-deep);
-  --glow: #7a5aa840;
+  --glow: #9681d940;
   position: relative;
   width: min(560px, 100%);
   max-height: calc(100dvh - 32px);
@@ -2012,7 +2013,7 @@ button {
   padding: 12px 14px;
   border: 1px solid #ecc96a66;
   border-radius: 16px 16px 4px 16px;
-  background: rgba(25, 18, 40, 0.94);
+  background: rgba(18, 25, 22, 0.94);
   box-shadow: 0 0 24px #b8344c33;
   font-size: 14px;
   line-height: 1.45;
@@ -2091,9 +2092,9 @@ button {
   justify-content: center;
   column-gap: 10px;
   max-width: calc(100% - 40px);
-  background: linear-gradient(135deg, #2a1d46, #3b2760);
+  background: linear-gradient(135deg, #1e2347, #23423f);
   border: 1px solid #ecc96a88;
-  box-shadow: 0 0 28px #8a6ad866, inset 0 0 18px #ecc96a22;
+  box-shadow: 0 0 28px #9681d966, inset 0 0 18px #ecc96a22;
   color: var(--ink-muted);
 }
 .factory-button strong {
@@ -2109,7 +2110,7 @@ button {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: conic-gradient(#6a4fbf, #3fae8c, #ecc96a, #d07ab0, #6a4fbf);
+  background: conic-gradient(#463181, #2c7b91, #ecc96a, #9681d9, #463181);
   box-shadow: 0 0 10px #ecc96a88;
   animation: portal-spin 4s linear infinite;
   -webkit-mask: radial-gradient(circle, transparent 30%, #000 32%);

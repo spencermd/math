@@ -25,13 +25,13 @@ function VineSide({ className }: { className: string }) {
     </g>
   );
   const leaf = (x: number, y: number, a: number) => (
-    <path d="M0 0 C6 -8 18 -8 24 0 C18 8 6 8 0 0 Z" fill="#4f6b45" transform={`translate(${x} ${y}) rotate(${a})`} />
+    <path d="M0 0 C6 -8 18 -8 24 0 C18 8 6 8 0 0 Z" fill="#56743f" transform={`translate(${x} ${y}) rotate(${a})`} />
   );
   return (
     <svg className={`vine ${className}`} width="70" height="560" viewBox="0 0 70 560" aria-hidden>
       <path
         d="M4 0 C30 40 2 80 18 130 C34 180 4 220 16 270 C28 320 6 360 14 410 C22 460 4 500 10 560"
-        stroke="#3d5338"
+        stroke="#34502f"
         strokeWidth="4"
         fill="none"
       />
@@ -41,10 +41,10 @@ function VineSide({ className }: { className: string }) {
       {leaf(10, 205, 40)}
       {leaf(20, 330, -20)}
       {leaf(12, 440, 30)}
-      {flower(26, 70, 7, '#b58ad8')}
-      {flower(10, 180, 6, '#d896b4')}
-      {flower(24, 300, 7, '#b58ad8')}
-      {flower(14, 470, 6, '#d896b4')}
+      {flower(26, 70, 7, '#9681d9')}
+      {flower(10, 180, 6, '#e0b4a2')}
+      {flower(24, 300, 7, '#9681d9')}
+      {flower(14, 470, 6, '#e0b4a2')}
     </svg>
   );
 }

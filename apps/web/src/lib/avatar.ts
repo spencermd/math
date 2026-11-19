@@ -52,13 +52,13 @@ export const HATS: Choice[] = [
 
 /** Cloak colours: muted, to sit in the dark fairy-core palette. */
 export const CLOAKS: { id: string; label: string; color: string }[] = [
-  { id: 'amethyst', label: 'Amethyst', color: '#7a5aa8' },
-  { id: 'moss', label: 'Moss', color: '#5e7d4f' },
-  { id: 'ember', label: 'Ember', color: '#a8553a' },
-  { id: 'midnight', label: 'Midnight', color: '#36508a' },
-  { id: 'rose', label: 'Rose', color: '#9a4f6e' },
+  { id: 'amethyst', label: 'Amethyst', color: '#5f4ca0' },
+  { id: 'moss', label: 'Moss', color: '#4f6b3a' },
+  { id: 'ember', label: 'Ember', color: '#9a5a34' },
+  { id: 'midnight', label: 'Midnight', color: '#2f4a8a' },
+  { id: 'rose', label: 'Rose', color: '#7a4a64' },
   { id: 'gold', label: 'Gold', color: '#b08a3a' },
-  { id: 'teal', label: 'Teal', color: '#3f7a76' },
+  { id: 'teal', label: 'Teal', color: '#2c6f80' },
 ];
 
 export const DEFAULT_AVATAR: Avatar = { creature: 'fox', outfit: 'wizard', hat: 'none', cloak: 'amethyst' };

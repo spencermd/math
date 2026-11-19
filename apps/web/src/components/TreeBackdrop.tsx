@@ -5,6 +5,9 @@ import { REALM_LOOK } from '@/lib/realm-look';
 
 type Pt = { x: number; y: number };
 
+/** Moss, leaf and pine greens for the oak's leaves, so the crown reads as forest whatever realm it holds. */
+const MOSS = ['#4f6b3a', '#2f5233', '#6b8a55', '#3d5a44'];
+
 /** Points along a cubic Bézier. */
 function cubic(p0: Pt, p1: Pt, p2: Pt, p3: Pt, steps = 28): Pt[] {
   const out: Pt[] = [];
@@ -149,10 +152,10 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
       <svg width={bounds.width} height={bounds.height} viewBox={view} aria-hidden>
         <defs>
           <linearGradient id="bark" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#1d1426" />
-            <stop offset="0.45" stopColor="#3a2a3e" />
-            <stop offset="0.6" stopColor="#4a3646" />
-            <stop offset="1" stopColor="#1b1222" />
+            <stop offset="0" stopColor="#1c151d" />
+            <stop offset="0.45" stopColor="#3b2c37" />
+            <stop offset="0.6" stopColor="#56434f" />
+            <stop offset="1" stopColor="#19121a" />
           </linearGradient>
           <filter id="oak-glow" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="14" result="b" />
@@ -170,7 +173,7 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
           ))}
           <radialGradient id="ground">
             <stop offset="0" stopColor="#f5d060" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#7b4fbf" stopOpacity="0" />
+            <stop offset="1" stopColor="#2f5233" stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -199,8 +202,8 @@ function TreeBackdropView({ onPortal }: { onPortal: () => void }) {
               cx={f.x}
               cy={f.y}
               r={f.r}
-              fill={REALMS[f.id].color}
-              fillOpacity={0.07}
+              fill={MOSS[i % MOSS.length]}
+              fillOpacity={0.13}
               stroke={REALMS[f.id].border}
               strokeOpacity={0.1}
               strokeWidth={2}
