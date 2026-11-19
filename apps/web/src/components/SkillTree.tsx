@@ -1,15 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Background,
-  BackgroundVariant,
-  Controls,
-  ReactFlow,
-  ReactFlowProvider,
-  useReactFlow,
-  type Edge,
-} from '@xyflow/react';
+import { Controls, ReactFlow, ReactFlowProvider, ViewportPortal, useReactFlow, type Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   EDGES,
@@ -31,6 +23,7 @@ import {
   type ReviewItem,
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
+import { useLook } from '@/lib/look-store';
 import { LAYOUT } from '@/lib/tree-layout';
 import TopicNode, { type TopicFlowNode } from './TopicNode';
 import { TopicPanel } from './TopicPanel';
@@ -42,6 +35,11 @@ import { Factory } from './Factory';
 import { Challenge, type ChallengeItem } from './Challenge';
 import { BadgeGallery, BadgeToast } from './Badges';
 import { Welcome } from './Welcome';
+import { TreeBackdrop } from './TreeBackdrop';
+import { Sky, Vines } from './Sky';
+import { Phoenix } from './Phoenix';
+import { Wardrobe } from './Wardrobe';
+import { PhoenixArt } from './PhoenixArt';
 
 const nodeTypes = { topic: TopicNode };
 
@@ -51,7 +49,8 @@ type Activity =
   | { kind: 'factory'; scope: FactoryScope }
   | { kind: 'review'; items: ReviewItem[] }
   | { kind: 'challenge'; topicId: string; items: ChallengeItem[] }
-  | { kind: 'badges' };
+  | { kind: 'badges' }
+  | { kind: 'wardrobe' };
 
 // Only called from event handlers, so rendering stays pure.
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
@@ -60,14 +59,19 @@ export function SkillTree() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    Promise.resolve(useProgress.persist.rehydrate()).then(() => {
+    Promise.all([useProgress.persist.rehydrate(), useLook.persist.rehydrate()]).then(() => {
       useProgress.getState().checkBadges();
       setHydrated(true);
     });
   }, []);
 
   if (!hydrated) {
-    return <div className="loading">Growing your tree…</div>;
+    return (
+      <div className="loading">
+        <PhoenixArt size={64} className="loading-phoenix" />
+        Growing your tree…
+      </div>
+    );
   }
   return (
     <ReactFlowProvider>
@@ -80,6 +84,8 @@ function TreeView() {
   const progress = useProgress(s => s.nodes);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activity, setActivity] = useState<Activity | null>(null);
+  // The realm last flown to, for the phoenix to introduce; `flight` counts trips.
+  const [flown, setFlown] = useState<{ realm: RealmId | null; flight: number }>({ realm: null, flight: 0 });
   const { fitView, setCenter } = useReactFlow();
   const setStatus = useProgress(s => s.setStatus);
   const setWelcomed = useProgress(s => s.setWelcomed);
@@ -127,6 +133,8 @@ function TreeView() {
         const sourceDone = isDone(getStatus(e.source, progress));
         const targetDone = isDone(getStatus(e.target, progress));
         const realm = getRealmForNode(NODE_BY_ID[e.target]);
+        // A link from another realm crosses the whole canopy; it stays faint until one of its ends is picked.
+        const crossRealm = NODE_BY_ID[e.source].realm !== NODE_BY_ID[e.target].realm;
         const touched = selectedId === e.source || selectedId === e.target;
         const stroke = sourceDone && targetDone ? realm.color : sourceDone ? realm.border : 'var(--line)';
         return {
@@ -138,8 +146,8 @@ function TreeView() {
           style: {
             stroke: touched ? 'var(--ink)' : stroke,
             strokeWidth: touched ? 2.5 : sourceDone ? 2 : 1.25,
-            strokeDasharray: e.cross ? '6 4' : undefined,
-            opacity: touched || sourceDone ? 0.95 : 0.5,
+            strokeDasharray: e.cross || crossRealm ? '6 6' : undefined,
+            opacity: touched ? 0.95 : crossRealm ? 0.14 : sourceDone ? 0.9 : 0.5,
           },
         };
       }),
@@ -158,6 +166,7 @@ function TreeView() {
   const jumpToRealm = useCallback(
     (realmId: RealmId) => {
       setSelectedId(null);
+      setFlown(f => ({ realm: realmId, flight: f.flight + 1 }));
       fitView({
         nodes: getNodesForRealm(realmId).map(n => ({ id: n.id })),
         padding: 0.3,
@@ -205,6 +214,7 @@ function TreeView() {
 
   return (
     <div className="tree-shell">
+      <Sky />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -221,11 +231,14 @@ function TreeView() {
         onPaneClick={() => setSelectedId(null)}
         proOptions={{ hideAttribution: true }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="var(--line)" />
+        <ViewportPortal>
+          <TreeBackdrop onPortal={() => openFactory()} />
+        </ViewportPortal>
         <Controls showInteractive={false} position="bottom-left" />
       </ReactFlow>
 
-      <TopBar onBadges={() => setActivity({ kind: 'badges' })} />
+      <Vines />
+      <TopBar onBadges={() => setActivity({ kind: 'badges' })} onWardrobe={() => setActivity({ kind: 'wardrobe' })} />
       <RealmBar onJump={jumpToRealm} />
       {selectedId && (
         <TopicPanel
@@ -239,7 +252,8 @@ function TreeView() {
       )}
       {!selectedId && (
         <button className="factory-button" onClick={() => openFactory()}>
-          <strong>🏭 Problem Factory</strong>
+          <span className="factory-portal" aria-hidden />
+          <strong>Problem Factory</strong>
           <span>{due > 0 ? `Contest problems · ${due} to review` : 'Try some contest problems'}</span>
         </button>
       )}
@@ -264,6 +278,10 @@ function TreeView() {
         />
       )}
       {activity?.kind === 'badges' && <BadgeGallery onClose={() => setActivity(null)} />}
+      {activity?.kind === 'wardrobe' && <Wardrobe onClose={() => setActivity(null)} />}
+      {!selectedId && !activity && !showWelcome && (
+        <Phoenix realm={flown.realm} flight={flown.flight} due={due} onFocus={focusTopic} onReview={startReview} />
+      )}
       {showWelcome && !activity && (
         <Welcome
           firstTopic={firstTopic.label}

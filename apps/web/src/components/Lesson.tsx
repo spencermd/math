@@ -11,6 +11,7 @@ import {
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { ProblemCard, StepView } from './ProblemCard';
+import { REALM_LOOK } from '@/lib/realm-look';
 
 type View =
   | { mode: 'learn'; step: number }
@@ -68,7 +69,7 @@ export function Lesson({ topicId: homeTopic, resume, onClose }: Props) {
     >
       <header className="lesson-head">
         <div>
-          <p className="lesson-realm">Realm {realm.label} · {realm.name}</p>
+          <p className="lesson-realm">{REALM_LOOK[realm.id].emblem} {REALM_LOOK[realm.id].land} · {realm.name}</p>
           <h2 className="lesson-title">{topic.label}</h2>
         </div>
         <button className="btn-ghost" onClick={onClose}>Back to the tree</button>

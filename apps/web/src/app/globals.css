@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
-/* The tree is a night-sky world, so the app is dark-only by design. */
+/* The tree is a night-sky world, so the app is dark-only by design. Dark fairy core: muted plums, gold glow. */
 :root {
   color-scheme: dark;
-  --bg: #0a0a14;
-  --surface: #161626;
-  --surface-raised: #1e1d33;
-  --line: #2d2b42;
-  --ink: #fffffe;
-  --ink-muted: #a7a9be;
-  --ink-faint: #6a6a8a;
-  --gold: #f5d060;
-  --gold-deep: #e6a817;
+  --bg: #0d0a18;
+  --surface: #191427;
+  --surface-raised: #221b33;
+  --line: #352b4a;
+  --ink: #fbf7ff;
+  --ink-muted: #b3a9c6;
+  --ink-faint: #74698c;
+  --gold: #ecc96a;
+  --gold-deep: #c99a3a;
+  --gold-glow: #ecc96a55;
 }
 
 @theme inline {
@@ -19,6 +20,7 @@
   --color-foreground: var(--ink);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-cinzel), Georgia, serif;
+  --font-title: var(--font-uncial), var(--font-cinzel), Georgia, serif;
 }
 
 body {
@@ -37,8 +39,11 @@ button {
 }
 
 .loading {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
   height: 100dvh;
   font-family: var(--font-display);
   color: var(--ink-muted);
@@ -51,7 +56,8 @@ button {
   height: 100dvh;
   width: 100%;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 0%, #17142c 0%, var(--bg) 60%);
+  /* Purple ombré: a deep violet sky fading to near-black at the ground. */
+  background: linear-gradient(180deg, #1c1236 0%, #150f2a 35%, #0f0b1d 70%, #0a0812 100%);
 }
 
 .tree-shell .react-flow {
@@ -125,17 +131,18 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 20px;
-  background: linear-gradient(180deg, rgba(10, 10, 20, 0.95) 0%, rgba(10, 10, 20, 0.6) 70%, transparent 100%);
+  background: linear-gradient(180deg, rgba(20, 13, 38, 0.92) 0%, rgba(20, 13, 38, 0.55) 70%, transparent 100%);
   pointer-events: none;
 }
 .top-bar > * {
   pointer-events: auto;
 }
 .brand {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-family: var(--font-title);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  filter: drop-shadow(0 0 10px var(--gold-glow));
   background: linear-gradient(135deg, var(--gold), var(--gold-deep));
   -webkit-background-clip: text;
   background-clip: text;
@@ -1629,4 +1636,635 @@ button {
 .standing-topic {
   font-weight: 600;
   color: var(--ink);
+}
+
+/* ══ Dark fairy core: the students' ideas ═══════════════════════════════════ */
+
+/* ── Sky: stars, aurora, fireflies ────────────────── */
+.sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sky-stars {
+  position: absolute;
+  inset: -50%;
+  background-repeat: repeat;
+}
+.sky-stars-far {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff9 50%, transparent 51%),
+    radial-gradient(1px 1px at 90px 140px, #fff7 50%, transparent 51%),
+    radial-gradient(1px 1px at 160px 60px, #e8d9ff99 50%, transparent 51%),
+    radial-gradient(1px 1px at 230px 190px, #fff8 50%, transparent 51%),
+    radial-gradient(1px 1px at 50px 220px, #fff6 50%, transparent 51%);
+  background-size: 260px 260px;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+.sky-stars-near {
+  background-image:
+    radial-gradient(1.6px 1.6px at 40px 80px, #fff 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 300px 40px, #ffe9b0 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 180px 300px, #e2d2ff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 360px 220px, #fff 50%, transparent 51%);
+  background-size: 420px 420px;
+  animation: twinkle 4.5s ease-in-out infinite alternate-reverse;
+}
+@keyframes twinkle {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+.aurora {
+  position: absolute;
+  width: 70vw;
+  height: 45vh;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.32;
+  mix-blend-mode: screen;
+}
+.aurora-a {
+  top: -12vh;
+  left: -10vw;
+  background: linear-gradient(100deg, transparent, #3fae8c 30%, #6a4fbf 70%, transparent);
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+}
+.aurora-b {
+  top: -8vh;
+  right: -15vw;
+  background: linear-gradient(80deg, transparent, #8a4fbf 35%, #d07ab0 65%, transparent);
+  animation: aurora-drift 28s ease-in-out infinite alternate-reverse;
+}
+.aurora-c {
+  top: 8vh;
+  left: 20vw;
+  height: 25vh;
+  opacity: 0.18;
+  background: linear-gradient(90deg, transparent, #4fbfa8, #8fd0ff, transparent);
+  animation: aurora-drift 34s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  0% { transform: translateX(0) skewX(-8deg) scaleY(1); }
+  50% { transform: translateX(6vw) skewX(6deg) scaleY(1.2); }
+  100% { transform: translateX(-4vw) skewX(-4deg) scaleY(0.9); }
+}
+.firefly {
+  position: absolute;
+  left: calc(4% + var(--i) * 7%);
+  bottom: calc(6% + (var(--i) * 37 % 60) * 1%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffe7a0;
+  box-shadow: 0 0 10px 3px #ecc96a88;
+  opacity: 0;
+  animation: firefly 9s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.83s);
+}
+@keyframes firefly {
+  0%, 100% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 0.9; }
+  50% { opacity: 0.5; transform: translate(28px, -40px); }
+  80% { opacity: 0.85; transform: translate(-16px, -70px); }
+}
+
+/* ── Vines framing the top ────────────────────────── */
+.vine {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  opacity: 0.85;
+  z-index: 1;
+}
+.vine-tl { left: 0; }
+.vine-tr { right: 0; transform: scaleX(-1); }
+
+/* ── The oak behind the topics ────────────────────── */
+.tree-shell .react-flow__viewport-portal {
+  z-index: -1;
+}
+.tree-backdrop {
+  position: absolute;
+  pointer-events: none;
+}
+.tree-backdrop svg {
+  overflow: visible;
+}
+.oak {
+  animation: oak-breathe 6s ease-in-out infinite alternate;
+}
+@keyframes oak-breathe {
+  from { opacity: 0.82; }
+  to { opacity: 1; }
+}
+.motifs text {
+  opacity: 0.4;
+  animation: bob 6s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes bob {
+  from { transform: translateY(-5px) rotate(-6deg); }
+  to { transform: translateY(5px) rotate(6deg); }
+}
+.motifs text.realm-banner,
+.motifs text.realm-banner-sub,
+.tree-backdrop .realm-banner-sub {
+  animation: none;
+  opacity: 1;
+}
+.realm-banner {
+  font-family: var(--font-title);
+  font-size: 34px;
+  letter-spacing: 0.04em;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+.realm-banner-sub {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--ink-muted);
+}
+.tree-portal {
+  position: absolute;
+  width: 140px;
+  height: 190px;
+  border: none;
+  background: none;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+}
+.tree-portal-swirl {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% / 45%;
+  background:
+    radial-gradient(ellipse at center, #1a0f2e 0%, #1a0f2e 28%, transparent 62%),
+    conic-gradient(from 0deg, #6a4fbf, #3fae8c, #ecc96a, #d07ab0, #6a4fbf);
+  box-shadow: 0 0 30px 8px #8a6ad866, inset 0 0 30px #000;
+  animation: portal-spin 6s linear infinite;
+  filter: blur(0.5px);
+}
+.tree-portal:hover .tree-portal-swirl {
+  box-shadow: 0 0 46px 14px #ecc96a77, inset 0 0 30px #000;
+  animation-duration: 2.5s;
+}
+.tree-portal-label {
+  position: relative;
+  font-family: var(--font-title);
+  font-size: 22px;
+  color: var(--gold);
+  text-shadow: 0 0 12px #000, 0 0 8px var(--gold-glow);
+}
+@keyframes portal-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Topics on the tree: thorns and blooms ───────── */
+.topic-node[data-status="available"] {
+  backdrop-filter: blur(2px);
+}
+.thorns {
+  position: absolute;
+  inset: -6px -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 12px);
+  pointer-events: none;
+  overflow: visible;
+}
+.thorns path {
+  fill: none;
+  stroke: #7a5f52;
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+.thorns .thorn-spikes {
+  fill: #8d6e5e;
+  stroke: #4a3530;
+  stroke-width: 1;
+}
+.topic-bloom {
+  position: absolute;
+  bottom: -10px;
+  left: -8px;
+  font-size: 18px;
+  filter: drop-shadow(0 0 6px #ecc96a99);
+  animation: bloom 700ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+@keyframes bloom {
+  from { transform: scale(0) rotate(-90deg); }
+}
+
+/* ── Realm bar emblems ────────────────────────────── */
+.realm-pip {
+  font-size: 18px;
+  font-family: var(--font-sans);
+}
+
+/* ── Avatar ───────────────────────────────────────── */
+.avatar {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--cloak) 55%, #fff 0%) 0%, var(--cloak) 55%, #120c1e 100%);
+  border: 2px solid color-mix(in srgb, var(--cloak), #ecc96a 45%);
+  box-shadow: 0 0 calc(var(--size) * 0.3) color-mix(in srgb, var(--cloak), transparent 40%);
+}
+.avatar-creature {
+  font-size: calc(var(--size) * 0.56);
+  line-height: 1;
+}
+.avatar-hat {
+  position: absolute;
+  top: calc(var(--size) * -0.26);
+  font-size: calc(var(--size) * 0.38);
+  line-height: 1;
+}
+.avatar-item {
+  position: absolute;
+  right: calc(var(--size) * -0.12);
+  bottom: calc(var(--size) * -0.08);
+  font-size: calc(var(--size) * 0.34);
+  line-height: 1;
+  filter: drop-shadow(0 0 3px #000);
+}
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.avatar-button {
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  transition: transform 150ms ease;
+}
+.avatar-button:hover {
+  transform: scale(1.08) rotate(-4deg);
+}
+.sound-toggle {
+  padding: 4px 10px;
+  font-size: 16px;
+}
+
+/* ── Wardrobe ─────────────────────────────────────── */
+.wardrobe {
+  --realm: var(--gold-deep);
+  --glow: #7a5aa840;
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 28px 24px 24px;
+  text-align: left;
+}
+.wardrobe h2 {
+  font-family: var(--font-title);
+  font-size: 26px;
+  text-align: center;
+}
+.wardrobe .ceremony-kicker {
+  text-align: center;
+}
+.wardrobe-preview {
+  display: grid;
+  place-items: center;
+  padding: 26px 0 14px;
+}
+.wardrobe-group {
+  margin-top: 14px;
+  border: none;
+}
+.wardrobe-group legend {
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wardrobe-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wardrobe-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 64px;
+  padding: 8px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 22px;
+}
+.wardrobe-option small {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.wardrobe-option[aria-pressed="true"],
+.wardrobe-swatch[aria-pressed="true"] {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+.wardrobe-swatch {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+.wardrobe-settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 15px;
+}
+.wardrobe .btn-primary {
+  width: 100%;
+  margin-top: 18px;
+}
+
+/* ── Phoenix guide ────────────────────────────────── */
+.phoenix {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: min(360px, calc(100% - 32px));
+  z-index: 5;
+}
+.phoenix-bubble {
+  position: relative;
+  padding: 12px 14px;
+  border: 1px solid #ecc96a66;
+  border-radius: 16px 16px 4px 16px;
+  background: rgba(25, 18, 40, 0.94);
+  box-shadow: 0 0 24px #b8344c33;
+  font-size: 14px;
+  line-height: 1.45;
+  animation: rise 400ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.phoenix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.phoenix-actions .btn-ghost {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.phoenix-actions .link-btn {
+  font-size: 13px;
+}
+.phoenix-perch {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+}
+.phoenix-art {
+  display: block;
+  animation: hover-fly 3.2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 10px #f39a4566);
+}
+.phoenix-wing {
+  transform-box: fill-box;
+  animation: flap 1.6s ease-in-out infinite alternate;
+}
+.phoenix-wing-left { transform-origin: 100% 100%; }
+.phoenix-wing-right { transform-origin: 0% 100%; animation-delay: -0.1s; }
+.phoenix-tail {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: flicker 0.9s ease-in-out infinite alternate;
+}
+@keyframes hover-fly {
+  from { transform: translateY(2px); }
+  to { transform: translateY(-6px); }
+}
+@keyframes flap {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-9deg); }
+}
+.phoenix-wing-right {
+  animation-name: flap-right;
+}
+@keyframes flap-right {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(9deg); }
+}
+@keyframes flicker {
+  from { transform: scaleY(1) skewX(-3deg); }
+  to { transform: scaleY(1.08) skewX(3deg); }
+}
+.welcome-phoenix {
+  display: block;
+  margin: -12px auto 4px;
+}
+.welcome-brand {
+  font-family: var(--font-title);
+}
+
+/* ── Problem Factory as a portal ──────────────────── */
+.factory-button {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 10px;
+  max-width: calc(100% - 40px);
+  background: linear-gradient(135deg, #2a1d46, #3b2760);
+  border: 1px solid #ecc96a88;
+  box-shadow: 0 0 28px #8a6ad866, inset 0 0 18px #ecc96a22;
+  color: var(--ink-muted);
+}
+.factory-button strong {
+  color: var(--gold);
+  font-family: var(--font-title);
+  font-weight: 400;
+}
+.factory-button span:last-child {
+  flex-basis: 100%;
+  text-align: center;
+}
+.factory-portal {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: conic-gradient(#6a4fbf, #3fae8c, #ecc96a, #d07ab0, #6a4fbf);
+  box-shadow: 0 0 10px #ecc96a88;
+  animation: portal-spin 4s linear infinite;
+  -webkit-mask: radial-gradient(circle, transparent 30%, #000 32%);
+  mask: radial-gradient(circle, transparent 30%, #000 32%);
+}
+
+/* ── After an answer: glow when right, fire and water when wrong ── */
+.answer-zone {
+  position: relative;
+}
+.answer-zone[data-glow] .answer-input,
+.answer-zone[data-glow] .choice[data-right] {
+  border-color: var(--gold);
+  animation: glow-pulse 1.4s ease-out 2;
+}
+@keyframes glow-pulse {
+  0% { box-shadow: 0 0 0 0 #ecc96aaa; }
+  40% { box-shadow: 0 0 26px 10px #ecc96a88; }
+  100% { box-shadow: 0 0 0 0 #ecc96a00; }
+}
+.answer-zone[data-burn] .answer-input {
+  animation: char 1.6s ease-out forwards;
+}
+.choice[data-burnt] {
+  animation: char 1.6s ease-out forwards;
+  text-decoration: line-through;
+}
+@keyframes char {
+  0% { border-color: #ff8a3c; box-shadow: 0 0 22px 6px #ff6a2a99; color: #ffb27a; }
+  45% { border-color: #ff8a3c; box-shadow: 0 0 22px 6px #ff6a2a77; }
+  100% { border-color: #4a3a3a; box-shadow: none; color: #8a7a7a; background: #1a1214; }
+}
+.fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 3;
+}
+.fx-spark {
+  position: absolute;
+  left: 60px;
+  top: 50%;
+  color: var(--gold);
+  font-size: 18px;
+  text-shadow: 0 0 8px var(--gold);
+  animation: spark 1s ease-out forwards;
+  --angle: calc(var(--i) * 30deg);
+}
+@keyframes spark {
+  0% { transform: rotate(var(--angle)) translateX(0) scale(0.3); opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateX(90px) scale(1.1); opacity: 0; }
+}
+.fx-flames {
+  position: absolute;
+  left: 0;
+  top: -6px;
+  display: flex;
+  gap: 0;
+}
+.fx-flame {
+  font-size: 22px;
+  animation: flame 1.5s ease-in forwards;
+  animation-delay: calc(var(--i) * 40ms);
+  opacity: 0;
+}
+@keyframes flame {
+  0% { opacity: 0; transform: translateY(14px) scale(0.4); }
+  15% { opacity: 1; transform: translateY(0) scale(1.1); }
+  55% { opacity: 1; transform: translateY(-4px) scale(1); }
+  70% { opacity: 0.6; transform: translateY(-8px) scale(0.7); }
+  100% { opacity: 0; transform: translateY(-12px) scale(0.2); }
+}
+.fx-dragon {
+  position: absolute;
+  right: 0;
+  top: -30px;
+  font-size: 46px;
+  animation: dragon 1.4s cubic-bezier(0.2, 0.9, 0.3, 1.3) forwards;
+  opacity: 0;
+}
+@keyframes dragon {
+  0% { opacity: 0; transform: translate(30px, 30px) scale(0.3) rotate(20deg); }
+  20% { opacity: 1; transform: translate(0, 0) scale(1.1) rotate(-6deg); }
+  60% { opacity: 1; transform: translate(0, -4px) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(40px, -30px) scale(0.6); }
+}
+.fx-hero {
+  position: absolute;
+  left: -60px;
+  top: -8px;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  animation: hero 2s ease-out forwards;
+}
+.fx-bucket {
+  font-size: 22px;
+  margin-left: -6px;
+  transform-origin: 20% 80%;
+  animation: tip 2s ease-out forwards;
+}
+@keyframes hero {
+  0% { opacity: 0; transform: translateX(-30px); }
+  30% { opacity: 1; transform: translateX(0); }
+  45% { transform: translateX(40px); }
+  85% { opacity: 1; transform: translateX(40px); }
+  100% { opacity: 0; transform: translateX(10px); }
+}
+@keyframes tip {
+  0%, 40% { transform: rotate(0); }
+  55%, 80% { transform: rotate(70deg); }
+  100% { transform: rotate(0); }
+}
+.fx-splash {
+  position: absolute;
+  left: 40px;
+  top: -10px;
+  font-size: 30px;
+  opacity: 0;
+  animation: splash 2s ease-out forwards;
+}
+@keyframes splash {
+  0%, 48% { opacity: 0; transform: scale(0.4) translateX(0); }
+  60% { opacity: 1; transform: scale(1.2) translateX(10px); }
+  85% { opacity: 0.8; transform: scale(1) translateX(30px); }
+  100% { opacity: 0; transform: scale(0.8) translateX(40px); }
+}
+.fx-smoke {
+  position: absolute;
+  left: 70px;
+  top: -20px;
+  font-size: 24px;
+  opacity: 0;
+  animation: smoke 2.3s ease-out forwards;
+}
+@keyframes smoke {
+  0%, 62% { opacity: 0; transform: translateY(0); }
+  75% { opacity: 0.8; }
+  100% { opacity: 0; transform: translateY(-30px) scale(1.4); }
+}
+.loading-phoenix {
+  animation: hover-fly 1.2s ease-in-out infinite alternate;
+}
+
+/* Small screens: keep the phoenix and the portal button out of each other's way. */
+@media (max-width: 640px) {
+  .phoenix { bottom: 92px; }
+  .vine { width: 150px; height: 115px; }
+  .brand { font-size: 20px; }
+}
+
+/* Calm everything down for anyone who asks their device for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .sky-stars, .aurora, .firefly, .oak, .motifs text, .phoenix-art, .phoenix-wing, .phoenix-tail,
+  .tree-portal-swirl, .factory-portal, .loading-phoenix {
+    animation: none !important;
+  }
+  .fx-flame, .fx-dragon, .fx-hero, .fx-splash, .fx-smoke, .fx-spark {
+    display: none;
+  }
 }

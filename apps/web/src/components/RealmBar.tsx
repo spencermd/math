@@ -1,5 +1,6 @@
 import { REALMS, REALM_ORDER, getRealmProgress, type RealmId } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
+import { REALM_LOOK } from '@/lib/realm-look';
 
 export function RealmBar({ onJump }: { onJump: (realmId: RealmId) => void }) {
   const nodes = useProgress(s => s.nodes);
@@ -8,6 +9,7 @@ export function RealmBar({ onJump }: { onJump: (realmId: RealmId) => void }) {
       {REALM_ORDER.map(id => {
         const realm = REALMS[id];
         const pct = getRealmProgress(id, nodes);
+        const look = REALM_LOOK[id];
         return (
           <button
             key={id}
@@ -19,10 +21,10 @@ export function RealmBar({ onJump }: { onJump: (realmId: RealmId) => void }) {
               ['--pct' as string]: `${pct}%`,
             }}
             onClick={() => onJump(id)}
-            title={`${realm.name}: ${pct}% complete`}
-            aria-label={`Realm ${realm.label}: ${realm.name}, ${pct}% complete`}
+            title={`${look.land} · ${realm.name}: ${pct}% complete`}
+            aria-label={`${look.land}, ${realm.name}, ${pct}% complete`}
           >
-            {realm.label}
+            <span aria-hidden>{look.emblem}</span>
           </button>
         );
       })}

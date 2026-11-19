@@ -212,7 +212,8 @@ export const useProgress = create<ProgressState>()(
     },
     {
       // v2: the competition-math tree. Progress saved against the earlier K–college tree doesn't carry over.
-      name: 'mathtree-progress-v2',
+      // A preview build sets NEXT_PUBLIC_STORAGE_SUFFIX so trying it out never touches real progress.
+      name: `mathtree-progress-v2${process.env.NEXT_PUBLIC_STORAGE_SUFFIX ?? ''}`,
       // Rehydrated from SkillTree on mount so server and client render the same first frame.
       skipHydration: true,
       partialize: ({ nodes, streak, lastActiveDate, practice, reviews, welcomed, bests, stats, badges, mastery }) => ({

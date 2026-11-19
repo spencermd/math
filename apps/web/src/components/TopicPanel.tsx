@@ -13,6 +13,7 @@ import {
 } from '@mathtree/curriculum';
 import { useProgress } from '@/lib/progress-store';
 import { Readiness } from './Readiness';
+import { REALM_LOOK } from '@/lib/realm-look';
 
 const STATUS_TEXT: Record<Status, string> = {
   available: 'Not started',
@@ -52,7 +53,7 @@ export function TopicPanel({ topicId, onClose, onSelect, onPractice, onChallenge
       <button className="panel-close" onClick={onClose} aria-label="Close">×</button>
 
       <p className="panel-realm" style={{ color: realm.border }}>
-        Realm {realm.label} · {realm.name}
+        {REALM_LOOK[realm.id].emblem} {REALM_LOOK[realm.id].land} · {realm.name}
       </p>
       <h2 className="panel-title">{topic.label}</h2>
       <div className="panel-badges">

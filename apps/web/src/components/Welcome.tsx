@@ -1,4 +1,5 @@
 import { NODES } from '@mathtree/curriculum';
+import { PhoenixArt } from './PhoenixArt';
 
 interface Props {
   /** Label of the topic a beginner starts with. */
@@ -13,11 +14,13 @@ export function Welcome({ firstTopic, onStart, onFactory, onBrowse }: Props) {
   return (
     <div className="ceremony" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
       <div className="ceremony-card welcome-card" style={{ ['--realm' as string]: 'var(--gold)', ['--glow' as string]: '#D4A01740' }}>
+        <PhoenixArt size={88} className="welcome-phoenix" />
         <p className="ceremony-kicker">Welcome to</p>
         <h2 id="welcome-title" className="brand welcome-brand">MathTree</h2>
         <p className="welcome-text">
-          {NODES.length} topics of contest math, from clever arithmetic up to MATHCOUNTS and AMC 8. Every topic is
-          open: learn them in any order, or dive into problems and come back for the ones that stump you.
+          I&apos;m your phoenix guide. This glowing oak holds {NODES.length} topics of contest math, from clever
+          arithmetic up to MATHCOUNTS and AMC 8, in six realms kept by foxes, wizards, gnomes, witches, dragons and
+          fairies. Every realm is open: learn in any order, or step through the portal for problems.
         </p>
         <button className="btn-primary" onClick={onStart} autoFocus>
           Start with {firstTopic}

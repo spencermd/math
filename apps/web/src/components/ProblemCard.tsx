@@ -13,6 +13,7 @@ import {
 import { useProgress } from '@/lib/progress-store';
 import { MathText } from './MathText';
 import { VisualView } from './Visual';
+import { AnswerFx, useFxOn, type FxKind } from './AnswerFx';
 
 export function StepView({ step }: { step: Step }) {
   return (
@@ -91,6 +92,10 @@ export function ProblemCard({
   const [nudged, setNudged] = useState(false);
 
   const [asked, setAsked] = useState(0); // hints asked for, rather than offered after a miss
+  // The latest answer's flourish; `n` restarts it for each answer. Wrong picks stay scorched.
+  const [fx, setFx] = useState<{ kind: FxKind; n: number } | null>(null);
+  const [burnt, setBurnt] = useState<number[]>([]);
+  const fxOn = useFxOn();
 
   const shownAt = useRef(0);
   useEffect(() => {
@@ -126,6 +131,7 @@ export function ProblemCard({
     });
     if (right) finish(shown === 0, attempts + 1);
     setResult(right ? 'correct' : 'wrong');
+    setFx(f => ({ kind: right ? 'right' : 'wrong', n: (f?.n ?? 0) + 1 }));
     setAttempts(a => a + 1);
     setNote(why);
     // A miss with nothing specific to say about it gets the next hint instead, so there is always a way forward.
@@ -163,6 +169,7 @@ export function ProblemCard({
       <h3 className="prompt"><MathText text={problem.prompt} /></h3>
       {problem.visual && <VisualView visual={problem.visual} />}
 
+      <div className="answer-zone" data-burn={(fxOn && result === 'wrong') || undefined} data-glow={(fxOn && solved) || undefined}>
       {answer.kind !== 'choice' ? (
         <form className="answer-row" onSubmit={onSubmit}>
           <input
@@ -183,12 +190,24 @@ export function ProblemCard({
       ) : (
         <div className="choices">
           {answer.options.map((option, i) => (
-            <button key={option} className="choice" disabled={locked} data-right={(locked && i === answer.correct) || undefined} onClick={() => submit(i === answer.correct)}>
+            <button
+              key={option}
+              className="choice"
+              disabled={locked}
+              data-right={(locked && i === answer.correct) || undefined}
+              data-burnt={(fxOn && burnt.includes(i)) || undefined}
+              onClick={() => {
+                if (i !== answer.correct) setBurnt(b => [...b, i]);
+                submit(i === answer.correct);
+              }}
+            >
               <MathText text={option} />
             </button>
           ))}
         </div>
       )}
+      {fxOn && fx && <AnswerFx key={fx.n} kind={fx.kind} />}
+      </div>
 
       <div aria-live="polite">
         {result === 'wrong' && (

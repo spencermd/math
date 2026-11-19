@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Inter, STIX_Two_Text } from "next/font/google";
+import { Cinzel, Inter, STIX_Two_Text, Uncial_Antiqua } from "next/font/google";
 import "./globals.css";
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin"],
   weight: ["400", "600", "700"],
+});
+
+// The title font: a fairy-tale uncial, for the dark fairy-core look the students asked for.
+const uncial = Uncial_Antiqua({
+  variable: "--font-uncial",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 const inter = Inter({
@@ -26,12 +33,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a14",
+  themeColor: "#0d0a18",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${inter.variable} ${stix.variable} h-full antialiased`}>
+    <html lang="en" className={`${cinzel.variable} ${uncial.variable} ${inter.variable} ${stix.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );
